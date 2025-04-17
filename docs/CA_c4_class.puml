@@ -1,0 +1,271 @@
+@startuml core_layers
+allowmixing
+scale max 1200 width
+
+' Стиль пакетов
+skinparam packageStyle rectangle
+
+title Application Layers: Infrastructure → Interfaces → Usecases → Entities
+
+' ------------------ Infrastructure ------------------
+package "Infrastructure" #LightCoral {
+    package "DB Implementation" {
+        class PGUserRepository
+        class PGPVZRepository
+        class PGReceptionRepository
+        class PGProductRepository
+    }
+    
+    package "HTTP Server" {
+        class GinHTTPServer {
+            + StartServer(port: int)
+        }
+        
+        package "API Endpoints" {
+            class AuthAPI {
+                + POST /dummyLogin
+                + POST /register
+                + POST /login
+            }
+            
+            class PVZAPI {
+                + POST /pvz
+                + GET /pvz
+                + POST /pvz/{pvzId}/close_last_reception
+                + POST /pvz/{pvzId}/delete_last_product
+            }
+            
+            class ReceptionAPI {
+                + POST /receptions
+            }
+            
+            class ProductAPI {
+                + POST /products
+            }
+        }
+        
+        GinHTTPServer --> AuthAPI
+        GinHTTPServer --> PVZAPI
+        GinHTTPServer --> ReceptionAPI
+        GinHTTPServer --> ProductAPI
+    }
+    
+    package "gRPC Server" {
+        class GRPCServer {
+            + StartServer(port: int)
+        }
+        class PVZGrpcService {
+            + ListPVZ() : List<PVZDTO>
+        }
+        GRPCServer --> PVZGrpcService
+    }
+    
+    package "Metrics" {
+        class PrometheusExporter {
+            + RegisterMetrics()
+            + GET /metrics
+            + CountRequest()
+            + ObserveResponseTime()
+            + IncrementPVZCount()
+            + IncrementReceptionCount()
+            + IncrementProductCount()
+        }
+    }
+    
+    package "Logging" {
+        class Logger
+    }
+    
+    package "Code Generation" {
+        class OpenAPICodegen
+    }
+}
+
+' ------------------ Interfaces ------------------
+package "Interfaces" #LightBlue {
+    package "Controllers" {
+        class AuthController {
+            + DummyLogin(role: UserRole) : Token
+            + Register(req: RegisterRequest) : UserDTO
+            + Login(req: LoginRequest) : Token
+        }
+        class PVZController {
+            + CreatePVZ(req: PVZDTO) : PVZDTO
+            + ListPVZ(params: ListParams) : List<FullPVZDTO>
+        }
+        class ReceptionController {
+            + CreateReception(pvzId: UUID) : ReceptionDTO
+            + CloseLastReception(pvzId: UUID) : ReceptionDTO
+        }
+        class ProductController {
+            + AddProduct(req: AddProductRequest) : ProductDTO
+            + DeleteLastProduct(pvzId: UUID) : void
+        }
+    }
+    package "DTOs" #LightBlue {
+        class UserDTO {
+            + id: UUID
+            + email: string
+            + role: UserRole
+        }
+        class PVZDTO {
+            + id: UUID
+            + registrationDate: DateTime
+            + city: City
+        }
+        class FullPVZDTO {
+            + pvz: PVZDTO
+            + receptions: List<ReceptionWithProductsDTO>
+        }
+        class ReceptionDTO {
+            + id: UUID
+            + dateTime: DateTime
+            + status: ReceptionStatus
+            + pvzId: UUID
+        }
+        class ProductDTO {
+            + id: UUID
+            + dateTime: DateTime
+            + type: ProductType
+            + receptionId: UUID
+        }
+        class ReceptionWithProductsDTO {
+            + reception: ReceptionDTO
+            + products: List<ProductDTO>
+        }
+        class RegisterRequest {
+            + email: string
+            + password: string
+            + role: UserRole
+        }
+        class LoginRequest {
+            + email: string
+            + password: string
+        }
+        class ListParams {
+            + startDate?: DateTime
+            + endDate?: DateTime
+            + page: int
+            + limit: int
+        }
+        class AddProductRequest {
+            + pvzId: UUID
+            + type: ProductType
+        }
+    }
+    package "Repositories" #LightBlue {
+        interface UserRepository {
+            + Create(user: User) : User
+            + GetByEmail(email: string) : User?
+        }
+        interface PVZRepository {
+            + Save(pvz: PVZ) : PVZ
+            + List(startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
+        }
+        interface ReceptionRepository {
+            + Save(reception: Reception) : Reception
+            + CloseLast(pvzId: UUID) : Reception
+            + GetActive(pvzId: UUID) : Reception?
+        }
+        interface ProductRepository {
+            + Save(product: Product) : Product
+            + DeleteLast(pvzId: UUID) : void
+            + ListByReception(receptionId: UUID) : List<Product>
+        }
+    }
+}
+
+' ------------------ Usecases ------------------
+package "Usecases" #LightGreen {
+    class DummyLoginUseCase {
+        + NewDummyLoginUseCase() : *DummyLoginUseCase
+        + Execute(role: UserRole) : Token
+    }
+    class RegisterUseCase {
+        + NewRegisterUseCase(userRepo UserRepository) : *RegisterUseCase
+        + Execute(email: string, password: string, role: UserRole) : User
+    }
+    class LoginUseCase {
+        + NewLoginUseCase(userRepo UserRepository) : *LoginUseCase
+        + Execute(email: string, password: string) : Token
+    }
+    class CreatePVZUseCase {
+        + NewCreatePVZUseCase(pvzRepo PVZRepository) : *CreatePVZUseCase
+        + Execute(pvz: PVZ) : PVZ
+    }
+    class ListPVZUseCase {
+        + NewListPVZUseCase(pvzRepo PVZRepository) : *ListPVZUseCase
+        + Execute(startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
+    }
+    class CreateReceptionUseCase {
+        + NewCreateReceptionUseCase(repo ReceptionRepository) : *CreateReceptionUseCase
+        + Execute(pvzId: UUID) : Reception
+    }
+    class AddProductUseCase {
+        + NewAddProductUseCase(repo ProductRepository) : *AddProductUseCase
+        + Execute(pvzId: UUID, type: ProductType) : Product
+    }
+    class CloseReceptionUseCase {
+        + NewCloseReceptionUseCase(repo ReceptionRepository) : *CloseReceptionUseCase
+        + Execute(pvzId: UUID) : Reception
+    }
+    class DeleteLastProductUseCase {
+        + NewDeleteLastProductUseCase(repo ProductRepository) : *DeleteLastProductUseCase
+        + Execute(pvzId: UUID) : void
+    }
+}
+
+' ------------------ Entities ------------------
+package "Entities" #LightYellow {
+    class User {
+        + id: UUID
+        + email: string
+        + role: UserRole
+    }
+    enum UserRole {
+        employee
+        moderator
+    }
+
+    class PVZ {
+        + id: UUID
+        + registrationDate: DateTime
+        + city: City
+        + receptions: List<Reception>
+    }
+    enum City {
+        Москва
+        "Санкт-Петербург"
+        Казань
+    }
+
+    class Reception {
+        + id: UUID
+        + dateTime: DateTime
+        + status: ReceptionStatus
+        + pvzId: UUID
+        + products: List<Product>
+    }
+    enum ReceptionStatus {
+        in_progress
+        closed
+    }
+
+    class Product {
+        + id: UUID
+        + dateTime: DateTime
+        + type: ProductType
+        + receptionId: UUID
+    }
+    enum ProductType {
+        электроника
+        одежда
+        обувь
+    }
+}
+
+' Внешние зависимости между слоями
+Infrastructure --> Interfaces
+Interfaces --> Usecases
+Usecases --> Entities
+@enduml

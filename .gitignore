@@ -1,0 +1,52 @@
+# Бинарные файлы и исполняемые файлы Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Скомпилированные бинарники
+bin/
+build/
+
+# Зависимости
+vendor/
+
+# Временные файлы Go
+/go.work
+
+# Локальная конфигурация 
+.env
+*.env
+config.local.yaml
+*.local.yaml
+
+# Файлы кеша и логов
+*.log
+logs/
+tmp/
+debug
+
+# Системные файлы macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE / Редакторы
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.history/
+
+# Кэш Go
+go.sum
+
+# Если используете Air для хот-релоада
+tmp/
