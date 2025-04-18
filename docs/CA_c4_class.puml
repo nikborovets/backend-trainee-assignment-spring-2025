@@ -223,7 +223,7 @@ package "Entities" #LightYellow {
         + role: UserRole
     }
     enum UserRole {
-        employee
+        client
         moderator
     }
 
@@ -248,7 +248,7 @@ package "Entities" #LightYellow {
     }
     enum ReceptionStatus {
         in_progress
-        closed
+        close
     }
 
     class Product {

@@ -90,8 +90,8 @@
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/your-username/backend-trainee-assignment.git
-cd backend-trainee-assignment
+git clone https://github.com/nikborovets/backend-trainee-assignment-spring-2025.git
+cd backend-trainee-assignment-spring-2025
 
 # Запуск через Docker
 docker-compose up -d
