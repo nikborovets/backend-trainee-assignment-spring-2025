@@ -5,4 +5,11 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT NOT NULL,
     registration_date TIMESTAMPTZ NOT NULL,
     password_hash TEXT NOT NULL
+);
+
+-- pvz table migration
+CREATE TABLE IF NOT EXISTS pvz (
+    id UUID PRIMARY KEY,
+    registration_date TIMESTAMPTZ NOT NULL,
+    city TEXT NOT NULL
 ); 
