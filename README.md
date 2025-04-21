@@ -108,3 +108,25 @@ docker-compose up -d
 - **HTTP API**: 8080
 - **gRPC**: 3000
 - **Prometheus**: 9000
+
+## Запуск тестов и покрытие
+
+Для корректного подсчёта покрытия production-кода при тестах в test/* используйте:
+
+```sh
+# Запуск всех тестов с подробным выводом
+go test -v ./test/...
+
+# Покрытие production-кода (всех пакетов internal) тестами из test/*
+go test -coverpkg=./internal/... ./test/...
+
+# Генерация отчёта покрытия по функциям
+go test -coverpkg=./internal/... -coverprofile=cover.out ./test/...
+go tool cover -func=cover.out
+
+# Визуализация покрытия в браузере
+# (откроется html-отчёт с раскраской строк)
+go tool cover -html=cover.out
+```
+
+> Если тесты будут перенесены в internal/*, достаточно будет обычного go test -cover ./... для покрытия.
