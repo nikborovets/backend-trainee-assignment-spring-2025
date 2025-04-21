@@ -35,7 +35,7 @@
   - [x] CreateReception (создание приёмки)
   - [x] AddProduct (добавление товара)
   - [x] DeleteLastProductUseCase (удаление последнего товара LIFO)
-  - [ ] CloseReception (закрытие приёмки)
+  - [x] CloseReceptionUseCase (закрытие приёмки)
   - [ ] ListPVZs (листинг ПВЗ с фильтрами)
   - [ ] Авторизация пользователей (dummy)
   - [ ] Регистрация и авторизация пользователей
