@@ -193,8 +193,8 @@ package "Usecases" #LightGreen {
         + NewCreatePVZUseCase(pvzRepo PVZRepository) : *CreatePVZUseCase
         + Execute(pvz: PVZ) : PVZ
     }
-    class ListPVZUseCase {
-        + NewListPVZUseCase(pvzRepo PVZRepository) : *ListPVZUseCase
+    class ListPVZsUseCase {
+        + NewListPVZsUseCase(pvzRepo PVZRepository) : *ListPVZsUseCase
         + Execute(startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
     }
     class CreateReceptionUseCase {
