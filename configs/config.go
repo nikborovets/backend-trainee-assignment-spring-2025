@@ -19,3 +19,8 @@ func LoadConfig() *Config {
 		JWTSecret: secret,
 	}
 }
+
+// GetTestPGDSN возвращает строку подключения к тестовой БД из переменной окружения TEST_PG_DSN
+func GetTestPGDSN() string {
+	return os.Getenv("TEST_PG_DSN")
+}

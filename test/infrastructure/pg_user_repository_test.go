@@ -3,12 +3,12 @@ package infrastructure_test
 import (
 	"context"
 	"database/sql"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure"
 	"github.com/stretchr/testify/require"
@@ -16,7 +16,7 @@ import (
 )
 
 func setupTestDB(t *testing.T) *sql.DB {
-	dsn := os.Getenv("TEST_PG_DSN")
+	dsn := configs.GetTestPGDSN()
 	if dsn == "" {
 		t.Skip("TEST_PG_DSN not set")
 	}
