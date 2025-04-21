@@ -29,7 +29,12 @@ func NewPVZController(create usecases.CreatePVZUseCaseIface, list usecases.ListP
 
 // POST /pvz {"city": "Москва"}
 func (c *PVZController) Create(ctx *gin.Context) {
-	user := ctx.MustGet("user").(entities.User)
+	userVal, ok := ctx.Get("user")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
+		return
+	}
+	user := userVal.(entities.User)
 	var req struct {
 		City entities.City `json:"city"`
 	}
@@ -47,7 +52,12 @@ func (c *PVZController) Create(ctx *gin.Context) {
 
 // GET /pvz?start=...&end=...&page=1&limit=10
 func (c *PVZController) List(ctx *gin.Context) {
-	user := ctx.MustGet("user").(entities.User)
+	userVal, ok := ctx.Get("user")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
+		return
+	}
+	user := userVal.(entities.User)
 	var start, end *time.Time
 	if s := ctx.Query("start"); s != "" {
 		t, err := time.Parse(time.RFC3339, s)
@@ -110,7 +120,12 @@ func (c *PVZController) List(ctx *gin.Context) {
 
 // POST /pvz/:pvzId/close_last_reception
 func (c *PVZController) CloseLastReception(ctx *gin.Context) {
-	user := ctx.MustGet("user").(entities.User)
+	userVal, ok := ctx.Get("user")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
+		return
+	}
+	user := userVal.(entities.User)
 	pvzID, err := uuid.Parse(ctx.Param("pvzId"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad pvzId"})
@@ -126,7 +141,12 @@ func (c *PVZController) CloseLastReception(ctx *gin.Context) {
 
 // POST /pvz/:pvzId/delete_last_product
 func (c *PVZController) DeleteLastProduct(ctx *gin.Context) {
-	user := ctx.MustGet("user").(entities.User)
+	userVal, ok := ctx.Get("user")
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
+		return
+	}
+	user := userVal.(entities.User)
 	pvzID, err := uuid.Parse(ctx.Param("pvzId"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad pvzId"})

@@ -130,17 +130,19 @@ func main() {
 	r.POST("/register", authCtrl.Register)
 	r.POST("/login", authCtrl.Login)
 
-	// --- PVZ ---
-	r.POST("/pvz", pvzCtrl.Create)
-	r.GET("/pvz", pvzCtrl.List)
-	r.POST("/pvz/:pvzId/close_last_reception", pvzCtrl.CloseLastReception)
-	r.POST("/pvz/:pvzId/delete_last_product", pvzCtrl.DeleteLastProduct)
+	// --- Защищённые эндпоинты ---
+	authMW := controllers.JWTAuthMiddleware(cfg.JWTSecret)
+	pvz := r.Group("/pvz", authMW)
+	pvz.POST("/", pvzCtrl.Create)
+	pvz.GET("/", pvzCtrl.List)
+	pvz.POST("/:pvzId/close_last_reception", pvzCtrl.CloseLastReception)
+	pvz.POST("/:pvzId/delete_last_product", pvzCtrl.DeleteLastProduct)
 
-	// --- Product ---
-	r.POST("/products", productCtrl.Add)
+	product := r.Group("/products", authMW)
+	product.POST("/", productCtrl.Add)
 
-	// --- Reception ---
-	r.POST("/receptions", receptionCtrl.Create)
+	reception := r.Group("/receptions", authMW)
+	reception.POST("/", receptionCtrl.Create)
 
 	// Healthcheck
 	r.GET("/ping", func(c *gin.Context) {

@@ -28,10 +28,11 @@ func (uc *DummyLoginUseCase) Execute(ctx context.Context, role entities.UserRole
 	}
 
 	claims := jwt.MapClaims{
-		"sub":  uuid.NewString(),
-		"role": string(role),
-		"iat":  time.Now().Unix(),
-		"exp":  time.Now().Add(24 * time.Hour).Unix(),
+		"sub":   uuid.NewString(),
+		"role":  string(role),
+		"email": "dummy@avito.ru",
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	jwtStr, err := token.SignedString(uc.jwtSecret)
