@@ -20,12 +20,15 @@
   - [x] Инициализация Git-репозитория
   - [x] Создание .gitignore
   - [x] Создание PUML-диаграммы архитектуры проекта (ЧА)
-  - [ ] Настройка структуры проекта в соответствии с чистой архитектурой
+  - [x] Настройка структуры проекта в соответствии с чистой архитектурой
+    - [x] Создание директорий: cmd/service, internal/entities, internal/usecases, internal/interfaces, internal/infrastructure, configs, test
+    - [x] Инициализация go.mod (Go module)
+    - [x] Настройка структуры проекта в соответствии с чистой архитектурой
   - [ ] Настройка Docker и Docker Compose
 
-- [ ] **Domain Layer (Entities)**
-  - [ ] Определение моделей данных (User, PVZ, Reception, Product)
-  - [ ] Определение правил бизнес-логики
+- [x] **Domain Layer (Entities)**
+  - [x] Определение моделей данных (User, PVZ, Reception, Product)
+  - [x] Определение правил бизнес-логики
 
 - [ ] **Use Cases**
   - [ ] Авторизация пользователей (dummy)
