@@ -38,7 +38,7 @@
   - [x] CloseReceptionUseCase (закрытие приёмки)
   - [x] ListPVZsUseCase (листинг ПВЗ с фильтрами)
   - [x] DummyLoginUseCase (выдача токена по роли, без пароля)
-  - [ ] LoginUseCase (логин по email+пароль)
+  - [x] LoginUseCase (логин по email+пароль)
   - [x] RegisterUseCase (регистрация пользователя)
   - [ ] Получение данных с фильтрацией
 
