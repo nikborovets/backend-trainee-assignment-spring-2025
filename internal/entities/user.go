@@ -20,9 +20,10 @@ type UserRole string
 const (
 	UserRoleClient    UserRole = "client"
 	UserRoleModerator UserRole = "moderator"
+	UserRolePVZStaff  UserRole = "pvz_staff"
 )
 
 // Проверяет, валидна ли роль пользователя
 func ValidateUserRole(role UserRole) bool {
-	return role == UserRoleClient || role == UserRoleModerator
+	return role == UserRoleClient || role == UserRoleModerator || role == UserRolePVZStaff
 }

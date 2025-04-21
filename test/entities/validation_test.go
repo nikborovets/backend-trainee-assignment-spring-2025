@@ -28,8 +28,8 @@ func TestValidateCity(t *testing.T) {
 
 func TestValidateUserRole(t *testing.T) {
 	// Arrange
-	valid := []entities.UserRole{entities.UserRoleClient, entities.UserRoleModerator}
-	invalid := []entities.UserRole{"pvz_staff", ""}
+	valid := []entities.UserRole{entities.UserRoleClient, entities.UserRoleModerator, entities.UserRolePVZStaff}
+	invalid := []entities.UserRole{"admin", "", "moderator2"}
 
 	// Act & Assert
 	for _, r := range valid {

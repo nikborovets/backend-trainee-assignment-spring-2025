@@ -225,6 +225,7 @@ package "Entities" #LightYellow {
     enum UserRole {
         client
         moderator
+        pvz_staff
     }
 
     class PVZ {
