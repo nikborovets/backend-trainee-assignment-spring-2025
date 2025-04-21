@@ -30,7 +30,7 @@ func TestListPVZsUseCase_Execute(t *testing.T) {
 			return []entities.PVZ{pvz}, nil
 		},
 	}
-	uc := usecases.NewListPVZsUseCase(repo)
+	uc := usecases.NewListPVZsUseCase(repo, nil, nil)
 	ctx := context.Background()
 
 	// Act

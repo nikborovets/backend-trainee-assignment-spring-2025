@@ -76,3 +76,24 @@ func (r *PGReceptionRepository) CloseLast(ctx context.Context, pvzID uuid.UUID, 
 	}
 	return nil
 }
+
+// ListByPVZ возвращает все приёмки по PVZ
+func (r *PGReceptionRepository) ListByPVZ(ctx context.Context, pvzID uuid.UUID) ([]entities.Reception, error) {
+	q := r.qb.Select("id", "pvz_id", "status", "date_time").From("reception").Where(squirrel.Eq{"pvz_id": pvzID})
+	rows, err := q.RunWith(r.db).QueryContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var res []entities.Reception
+	for rows.Next() {
+		var rec entities.Reception
+		var status string
+		if err := rows.Scan(&rec.ID, &rec.PVZID, &status, &rec.DateTime); err != nil {
+			return nil, err
+		}
+		rec.Status = entities.ReceptionStatus(status)
+		res = append(res, rec)
+	}
+	return res, rows.Err()
+}

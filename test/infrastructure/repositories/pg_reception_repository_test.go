@@ -79,3 +79,40 @@ func TestPGReceptionRepository_Save_GetActive_CloseLast(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, got)
 }
+
+func TestPGReceptionRepository_ListByPVZ(t *testing.T) {
+	// Arrange
+	db := setupReceptionTestDB(t)
+	repo := repositories.NewPGReceptionRepository(db)
+	ctx := context.Background()
+	pvzID := uuid.New()
+	_, err := db.Exec(`INSERT INTO pvz (id, registration_date, city) VALUES ($1, $2, $3)`, pvzID, time.Now().UTC(), "Москва")
+	require.NoError(t, err)
+
+	rec1 := entities.Reception{
+		ID:       uuid.New(),
+		PVZID:    pvzID,
+		Status:   entities.ReceptionInProgress,
+		DateTime: time.Now().Add(-2 * time.Hour).UTC(),
+	}
+	rec2 := entities.Reception{
+		ID:       uuid.New(),
+		PVZID:    pvzID,
+		Status:   entities.ReceptionClosed,
+		DateTime: time.Now().Add(-1 * time.Hour).UTC(),
+	}
+	_, err = repo.Save(ctx, rec1)
+	require.NoError(t, err)
+	_, err = repo.Save(ctx, rec2)
+	require.NoError(t, err)
+
+	// Act
+	list, err := repo.ListByPVZ(ctx, pvzID)
+
+	// Assert
+	require.NoError(t, err)
+	require.Len(t, list, 2)
+	ids := []uuid.UUID{list[0].ID, list[1].ID}
+	require.Contains(t, ids, rec1.ID)
+	require.Contains(t, ids, rec2.ID)
+}

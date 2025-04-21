@@ -25,6 +25,7 @@ type ReceptionRepository interface {
 	Save(ctx context.Context, reception entities.Reception) (entities.Reception, error)
 	CloseLast(ctx context.Context, pvzID uuid.UUID) (entities.Reception, error)
 	GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
+	ListByPVZ(ctx context.Context, pvzID uuid.UUID) ([]entities.Reception, error)
 }
 
 // ProductRepository — интерфейс для работы с товарами

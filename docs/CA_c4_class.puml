@@ -269,4 +269,11 @@ package "Entities" #LightYellow {
 Infrastructure --> Interfaces
 Interfaces --> Usecases
 Usecases --> Entities
+
+' --- Добавлено для вложенного GET /pvz ---
+ListPVZsUseCase --> ReceptionRepository : uses
+ListPVZsUseCase --> ProductRepository : uses
+PVZController --> ListPVZsUseCase : uses
+FullPVZDTO *-- ReceptionWithProductsDTO : receptions
+ReceptionWithProductsDTO *-- ProductDTO : products
 @enduml
