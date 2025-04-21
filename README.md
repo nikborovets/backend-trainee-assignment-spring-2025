@@ -42,10 +42,13 @@
   - [x] RegisterUseCase (регистрация пользователя)
   - [ ] Получение данных с фильтрацией
 
-- [ ] **Interfaces Layer**
-  - [ ] Определение репозиториев (интерфейсы)
-  - [ ] Определение контроллеров
-  - [ ] Определение DTO
+- [x] **Interfaces Layer**
+  - [x] Определение репозиториев (интерфейсы)
+  - [x] Определение контроллеров
+  - [x] Определение DTO
+    - Реализованы все основные DTO: UserDTO, PVZDTO, FullPVZDTO, ReceptionDTO, ProductDTO, ReceptionWithProductsDTO, RegisterRequest, LoginRequest, ListParams, AddProductRequest (internal/interfaces/dto.go)
+    - Все репозиторные интерфейсы: UserRepository, PVZRepository, ReceptionRepository, ProductRepository (internal/interfaces/repository.go)
+    - Все контроллеры: AuthController, PVZController, ReceptionController, ProductController (internal/interfaces/*_controller.go) — строго по .puml и ТЗ
 
 - [ ] **Infrastructure Layer**
   - [ ] **Базы данных**
