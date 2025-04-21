@@ -17,6 +17,11 @@ type UserRepositoryForLogin interface {
 	GetByEmail(ctx context.Context, email string) (*entities.User, string, error)
 }
 
+// LoginUseCaseIface — интерфейс для моков и контроллеров
+type LoginUseCaseIface interface {
+	Execute(ctx context.Context, email, password string) (string, error)
+}
+
 // LoginUseCase — интерактор для логина по email+пароль, возвращает JWT.
 type LoginUseCase struct {
 	repo      UserRepositoryForLogin

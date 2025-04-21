@@ -12,13 +12,13 @@ import (
 )
 
 type PVZController struct {
-	CreateUC     *usecases.CreatePVZUseCase
-	ListUC       *usecases.ListPVZsUseCase
-	CloseUC      *usecases.CloseReceptionUseCase
-	DeleteLastUC *usecases.DeleteLastProductUseCase
+	CreateUC     usecases.CreatePVZUseCaseIface
+	ListUC       usecases.ListPVZsUseCaseIface
+	CloseUC      usecases.CloseReceptionUseCaseIface
+	DeleteLastUC usecases.DeleteLastProductUseCaseIface
 }
 
-func NewPVZController(create *usecases.CreatePVZUseCase, list *usecases.ListPVZsUseCase, closeUC *usecases.CloseReceptionUseCase, delUC *usecases.DeleteLastProductUseCase) *PVZController {
+func NewPVZController(create usecases.CreatePVZUseCaseIface, list usecases.ListPVZsUseCaseIface, closeUC usecases.CloseReceptionUseCaseIface, delUC usecases.DeleteLastProductUseCaseIface) *PVZController {
 	return &PVZController{
 		CreateUC:     create,
 		ListUC:       list,
@@ -37,7 +37,7 @@ func (c *PVZController) Create(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
-	pvz, err := c.CreateUC.Execute(ctx, user, req.City)
+	pvz, err := c.CreateUC.Execute(ctx.Request.Context(), user, req.City)
 	if err != nil {
 		ctx.JSON(http.StatusForbidden, gin.H{"message": err.Error()})
 		return
@@ -71,7 +71,7 @@ func (c *PVZController) List(ctx *gin.Context) {
 	}
 
 	// --- агрегирующий usecase ---
-	pvzs, err := c.ListUC.Execute(ctx, user, start, end, page, limit)
+	pvzs, err := c.ListUC.Execute(ctx.Request.Context(), user, start, end, page, limit)
 	if err != nil {
 		ctx.JSON(http.StatusForbidden, gin.H{"message": err.Error()})
 		return
@@ -85,13 +85,13 @@ func (c *PVZController) List(ctx *gin.Context) {
 	}
 	for _, pvz := range pvzs {
 		// Для каждого PVZ — получить все приёмки и продукты
-		receptions, _ := c.ListUC.GetReceptionsByPVZ(ctx, pvz.ID) // предполагается, что usecase расширен
+		receptions, _ := c.ListUC.GetReceptionsByPVZ(ctx.Request.Context(), pvz.ID) // предполагается, что usecase расширен
 		var recs []struct {
 			Reception entities.Reception `json:"reception"`
 			Products  []entities.Product `json:"products"`
 		}
 		for _, rec := range receptions {
-			products, _ := c.ListUC.GetProductsByReception(ctx, rec.ID)
+			products, _ := c.ListUC.GetProductsByReception(ctx.Request.Context(), rec.ID)
 			recs = append(recs, struct {
 				Reception entities.Reception `json:"reception"`
 				Products  []entities.Product `json:"products"`
@@ -116,7 +116,7 @@ func (c *PVZController) CloseLastReception(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad pvzId"})
 		return
 	}
-	rec, err := c.CloseUC.Execute(ctx, user, pvzID)
+	rec, err := c.CloseUC.Execute(ctx.Request.Context(), user, pvzID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -132,7 +132,7 @@ func (c *PVZController) DeleteLastProduct(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad pvzId"})
 		return
 	}
-	err = c.DeleteLastUC.Execute(ctx, user, pvzID)
+	err = c.DeleteLastUC.Execute(ctx.Request.Context(), user, pvzID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return

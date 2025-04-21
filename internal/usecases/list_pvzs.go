@@ -40,3 +40,10 @@ func (uc *ListPVZsUseCase) GetReceptionsByPVZ(ctx context.Context, pvzID uuid.UU
 func (uc *ListPVZsUseCase) GetProductsByReception(ctx context.Context, receptionID uuid.UUID) ([]entities.Product, error) {
 	return uc.productRepo.ListByReception(ctx, receptionID)
 }
+
+// ListPVZsUseCaseIface — интерфейс для моков и контроллеров
+type ListPVZsUseCaseIface interface {
+	Execute(ctx context.Context, user entities.User, startDate, endDate *time.Time, page, limit int) ([]entities.PVZ, error)
+	GetReceptionsByPVZ(ctx context.Context, pvzID uuid.UUID) ([]entities.Reception, error)
+	GetProductsByReception(ctx context.Context, receptionID uuid.UUID) ([]entities.Product, error)
+}

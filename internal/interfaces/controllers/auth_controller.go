@@ -9,12 +9,12 @@ import (
 )
 
 type AuthController struct {
-	DummyLoginUC *usecases.DummyLoginUseCase
-	RegisterUC   *usecases.RegisterUseCase
-	LoginUC      *usecases.LoginUseCase
+	DummyLoginUC usecases.DummyLoginUseCaseIface
+	RegisterUC   usecases.RegisterUseCaseIface
+	LoginUC      usecases.LoginUseCaseIface
 }
 
-func NewAuthController(dummy *usecases.DummyLoginUseCase, reg *usecases.RegisterUseCase, login *usecases.LoginUseCase) *AuthController {
+func NewAuthController(dummy usecases.DummyLoginUseCaseIface, reg usecases.RegisterUseCaseIface, login usecases.LoginUseCaseIface) *AuthController {
 	return &AuthController{
 		DummyLoginUC: dummy,
 		RegisterUC:   reg,
@@ -31,7 +31,7 @@ func (c *AuthController) DummyLogin(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
-	token, err := c.DummyLoginUC.Execute(ctx, req.Role)
+	token, err := c.DummyLoginUC.Execute(ctx.Request.Context(), req.Role)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return
@@ -50,7 +50,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
-	user, err := c.RegisterUC.Execute(ctx, req.Email, req.Password, req.Role)
+	user, err := c.RegisterUC.Execute(ctx.Request.Context(), req.Email, req.Password, req.Role)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -68,7 +68,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 		return
 	}
-	token, err := c.LoginUC.Execute(ctx, req.Email, req.Password)
+	token, err := c.LoginUC.Execute(ctx.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return

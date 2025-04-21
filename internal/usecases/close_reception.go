@@ -40,3 +40,8 @@ func (uc *CloseReceptionUseCase) Execute(ctx context.Context, user entities.User
 	}
 	return uc.repo.Save(ctx, *rec)
 }
+
+// CloseReceptionUseCaseIface — интерфейс для моков и контроллеров
+type CloseReceptionUseCaseIface interface {
+	Execute(ctx context.Context, user entities.User, pvzID uuid.UUID) (entities.Reception, error)
+}
