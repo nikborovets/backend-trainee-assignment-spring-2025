@@ -13,6 +13,11 @@ type PVZRepository interface {
 	Save(ctx context.Context, pvz entities.PVZ) (entities.PVZ, error)
 }
 
+// CreatePVZUseCaseIface — интерфейс для моков и контроллеров
+type CreatePVZUseCaseIface interface {
+	Execute(ctx context.Context, user entities.User, city entities.City) (entities.PVZ, error)
+}
+
 // CreatePVZUseCase — интерактор для создания ПВЗ
 // Только модератор может создать ПВЗ, город должен быть разрешён
 

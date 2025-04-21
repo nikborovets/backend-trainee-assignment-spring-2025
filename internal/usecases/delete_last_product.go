@@ -50,3 +50,8 @@ func (uc *DeleteLastProductUseCase) Execute(ctx context.Context, user entities.U
 	_, err = uc.receptionRepo.Save(ctx, *rec)
 	return err
 }
+
+// DeleteLastProductUseCaseIface — интерфейс для моков и контроллеров
+type DeleteLastProductUseCaseIface interface {
+	Execute(ctx context.Context, user entities.User, pvzID uuid.UUID) error
+}

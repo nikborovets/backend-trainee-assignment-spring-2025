@@ -22,6 +22,11 @@ type RegisterUseCase struct {
 	repo UserRepositoryForRegister
 }
 
+// RegisterUseCaseIface — интерфейс для моков и контроллеров
+type RegisterUseCaseIface interface {
+	Execute(ctx context.Context, email, password string, role entities.UserRole) (entities.User, error)
+}
+
 func NewRegisterUseCase(repo UserRepositoryForRegister) *RegisterUseCase {
 	return &RegisterUseCase{repo: repo}
 }

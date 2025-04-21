@@ -43,3 +43,8 @@ func (uc *DummyLoginUseCase) Execute(ctx context.Context, role entities.UserRole
 
 // ErrInvalidRole возвращается, если роль невалидна.
 var ErrInvalidRole = errors.New("invalid user role")
+
+// DummyLoginUseCaseIface — интерфейс для моков и контроллеров
+type DummyLoginUseCaseIface interface {
+	Execute(ctx context.Context, role entities.UserRole) (string, error)
+}
