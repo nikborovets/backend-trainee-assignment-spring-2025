@@ -36,3 +36,13 @@ func ValidateCity(city City) bool {
 	}
 	return false
 }
+
+// GenerateUUID возвращает новый UUID
+func GenerateUUID() uuid.UUID {
+	return uuid.New()
+}
+
+// NowUTC возвращает текущее время в UTC
+func NowUTC() time.Time {
+	return time.Now().UTC()
+}
