@@ -20,31 +20,47 @@
   - [x] Инициализация Git-репозитория
   - [x] Создание .gitignore
   - [x] Создание PUML-диаграммы архитектуры проекта (ЧА)
-  - [ ] Настройка структуры проекта в соответствии с чистой архитектурой
+  - [x] Настройка структуры проекта в соответствии с чистой архитектурой
+    - [x] Создание директорий: cmd/service, internal/entities, internal/usecases, internal/interfaces, internal/infrastructure, configs, test
+    - [x] Инициализация go.mod (Go module)
+    - [x] Настройка структуры проекта в соответствии с чистой архитектурой
   - [ ] Настройка Docker и Docker Compose
 
-- [ ] **Domain Layer (Entities)**
-  - [ ] Определение моделей данных (User, PVZ, Reception, Product)
-  - [ ] Определение правил бизнес-логики
+- [x] **Domain Layer (Entities)**
+  - [x] Определение моделей данных (User, PVZ, Reception, Product)
+  - [x] Определение правил бизнес-логики
 
 - [ ] **Use Cases**
-  - [ ] Авторизация пользователей (dummy)
-  - [ ] Регистрация и авторизация пользователей
-  - [ ] Управление ПВЗ
-  - [ ] Управление приемкой товаров
-  - [ ] Управление товарами
+  - [x] CreatePVZ (создание ПВЗ)
+  - [x] CreateReception (создание приёмки)
+  - [x] AddProduct (добавление товара)
+  - [x] DeleteLastProductUseCase (удаление последнего товара LIFO)
+  - [x] CloseReceptionUseCase (закрытие приёмки)
+  - [x] ListPVZsUseCase (листинг ПВЗ с фильтрами)
+  - [x] DummyLoginUseCase (выдача токена по роли, без пароля)
+  - [x] LoginUseCase (логин по email+пароль)
+  - [x] RegisterUseCase (регистрация пользователя)
   - [ ] Получение данных с фильтрацией
 
-- [ ] **Interfaces Layer**
-  - [ ] Определение репозиториев (интерфейсы)
-  - [ ] Определение контроллеров
-  - [ ] Определение DTO
+- [x] **Interfaces Layer**
+  - [x] Определение репозиториев (интерфейсы)
+  - [x] Определение контроллеров
+  - [x] Определение DTO
+    - Реализованы все основные DTO: UserDTO, PVZDTO, FullPVZDTO, ReceptionDTO, ProductDTO, ReceptionWithProductsDTO, RegisterRequest, LoginRequest, ListParams, AddProductRequest (internal/interfaces/dto.go)
+    - Все репозиторные интерфейсы: UserRepository, PVZRepository, ReceptionRepository, ProductRepository (internal/interfaces/repository.go)
+    - Все контроллеры: AuthController, PVZController, ReceptionController, ProductController (internal/interfaces/*_controller.go) — строго по .puml и ТЗ
 
 - [ ] **Infrastructure Layer**
   - [ ] **Базы данных**
     - [ ] Настройка PostgreSQL
     - [ ] Реализация SQL-запросов и репозиториев
-    
+  - [x] **Базы данных**
+    - [x] Настройка PostgreSQL (миграции, FK, индексы, ограничения)
+    - [x] Реализованы все PG-репозитории: User, PVZ, Reception, Product (internal/infrastructure/repositories)
+    - [x] Используется Squirrel, без ORM, только чистый SQL
+    - [x] Интеграционные тесты для каждого репозитория (test/infrastructure/repositories), покрытие >75%
+    - [x] Структура файлов: всё разнесено по подпапкам, нет каши
+  
   - [ ] **HTTP сервер**
     - [ ] Настройка HTTP сервера (Gin)
     - [ ] Реализация эндпоинтов авторизации
@@ -61,8 +77,8 @@
     - [ ] Реализация эндпоинтов товаров
       - [ ] POST /products
 
-- [ ] **Тесты**
-  - [ ] Unit-тесты (покрытие > 75%)
+- [x] **Тесты**
+  - [x] Unit-тесты (покрытие > 75%)
   - [ ] Интеграционный тест сценария работы с ПВЗ и товарами
 
 ### Дополнительные задания
@@ -102,3 +118,25 @@ docker-compose up -d
 - **HTTP API**: 8080
 - **gRPC**: 3000
 - **Prometheus**: 9000
+
+## Запуск тестов и покрытие
+
+Для корректного подсчёта покрытия production-кода при тестах в test/* используйте:
+
+```sh
+# Запуск всех тестов с подробным выводом
+go test -v ./test/...
+
+# Покрытие production-кода (всех пакетов internal) тестами из test/*
+go test -coverpkg=./internal/... ./test/...
+
+# Генерация отчёта покрытия по функциям
+go test -coverpkg=./internal/... -coverprofile=cover.out ./test/...
+go tool cover -func=cover.out
+
+# Визуализация покрытия в браузере
+# (откроется html-отчёт с раскраской строк)
+go tool cover -html=cover.out
+```
+
+> Если тесты будут перенесены в internal/*, достаточно будет обычного go test -cover ./... для покрытия.

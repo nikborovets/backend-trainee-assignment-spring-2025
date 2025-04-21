@@ -125,7 +125,7 @@ package "Interfaces" #LightBlue {
         }
         class ProductDTO {
             + id: UUID
-            + dateTime: DateTime
+            + receivedAt: DateTime
             + type: ProductType
             + receptionId: UUID
         }
@@ -193,8 +193,8 @@ package "Usecases" #LightGreen {
         + NewCreatePVZUseCase(pvzRepo PVZRepository) : *CreatePVZUseCase
         + Execute(pvz: PVZ) : PVZ
     }
-    class ListPVZUseCase {
-        + NewListPVZUseCase(pvzRepo PVZRepository) : *ListPVZUseCase
+    class ListPVZsUseCase {
+        + NewListPVZsUseCase(pvzRepo PVZRepository) : *ListPVZsUseCase
         + Execute(startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
     }
     class CreateReceptionUseCase {
@@ -225,6 +225,7 @@ package "Entities" #LightYellow {
     enum UserRole {
         client
         moderator
+        pvz_staff
     }
 
     class PVZ {
@@ -253,7 +254,7 @@ package "Entities" #LightYellow {
 
     class Product {
         + id: UUID
-        + dateTime: DateTime
+        + receivedAt: DateTime
         + type: ProductType
         + receptionId: UUID
     }
@@ -268,4 +269,11 @@ package "Entities" #LightYellow {
 Infrastructure --> Interfaces
 Interfaces --> Usecases
 Usecases --> Entities
+
+' --- Добавлено для вложенного GET /pvz ---
+ListPVZsUseCase --> ReceptionRepository : uses
+ListPVZsUseCase --> ProductRepository : uses
+PVZController --> ListPVZsUseCase : uses
+FullPVZDTO *-- ReceptionWithProductsDTO : receptions
+ReceptionWithProductsDTO *-- ProductDTO : products
 @enduml
