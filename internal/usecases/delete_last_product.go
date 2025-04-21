@@ -8,28 +8,28 @@ import (
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 )
 
-// ProductRepositoryForRemove — интерфейс для удаления товара (LIFO)
-type ProductRepositoryForRemove interface {
+// ProductRepositoryForDelete — интерфейс для удаления товара (LIFO)
+type ProductRepositoryForDelete interface {
 	Delete(ctx context.Context, productID uuid.UUID) error
 }
 
-type ReceptionRepositoryForRemove interface {
+type ReceptionRepositoryForDelete interface {
 	GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
 	Save(ctx context.Context, reception entities.Reception) (entities.Reception, error)
 }
 
-// RemoveProductUseCase — интерактор для удаления последнего товара из приёмки (LIFO)
-type RemoveProductUseCase struct {
-	productRepo   ProductRepositoryForRemove
-	receptionRepo ReceptionRepositoryForRemove
+// DeleteLastProductUseCase — интерактор для удаления последнего товара из приёмки (LIFO)
+type DeleteLastProductUseCase struct {
+	productRepo   ProductRepositoryForDelete
+	receptionRepo ReceptionRepositoryForDelete
 }
 
-func NewRemoveProductUseCase(productRepo ProductRepositoryForRemove, receptionRepo ReceptionRepositoryForRemove) *RemoveProductUseCase {
-	return &RemoveProductUseCase{productRepo: productRepo, receptionRepo: receptionRepo}
+func NewDeleteLastProductUseCase(productRepo ProductRepositoryForDelete, receptionRepo ReceptionRepositoryForDelete) *DeleteLastProductUseCase {
+	return &DeleteLastProductUseCase{productRepo: productRepo, receptionRepo: receptionRepo}
 }
 
 // Execute удаляет последний товар из незакрытой приёмки, если роль pvz_staff
-func (uc *RemoveProductUseCase) Execute(ctx context.Context, user entities.User, pvzID uuid.UUID) error {
+func (uc *DeleteLastProductUseCase) Execute(ctx context.Context, user entities.User, pvzID uuid.UUID) error {
 	if user.Role != entities.UserRolePVZStaff {
 		return errors.New("только сотрудник ПВЗ может удалять товары")
 	}

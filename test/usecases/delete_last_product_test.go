@@ -11,27 +11,27 @@ import (
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
 )
 
-type mockProductRepoForRemove struct {
+type mockProductRepoForDelete struct {
 	deleteFunc func(ctx context.Context, productID uuid.UUID) error
 }
 
-func (m *mockProductRepoForRemove) Delete(ctx context.Context, productID uuid.UUID) error {
+func (m *mockProductRepoForDelete) Delete(ctx context.Context, productID uuid.UUID) error {
 	return m.deleteFunc(ctx, productID)
 }
 
-type mockReceptionRepoForRemove struct {
+type mockReceptionRepoForDelete struct {
 	getActiveFunc func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
 	saveFunc      func(ctx context.Context, reception entities.Reception) (entities.Reception, error)
 }
 
-func (m *mockReceptionRepoForRemove) GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
+func (m *mockReceptionRepoForDelete) GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
 	return m.getActiveFunc(ctx, pvzID)
 }
-func (m *mockReceptionRepoForRemove) Save(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
+func (m *mockReceptionRepoForDelete) Save(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
 	return m.saveFunc(ctx, reception)
 }
 
-func TestRemoveProductUseCase_Execute(t *testing.T) {
+func TestDeleteLastProductUseCase_Execute(t *testing.T) {
 	// Arrange
 	pvzID := uuid.New()
 	p1, p2 := uuid.New(), uuid.New()
@@ -41,7 +41,7 @@ func TestRemoveProductUseCase_Execute(t *testing.T) {
 		Status:   entities.ReceptionInProgress,
 		Products: []uuid.UUID{p1, p2},
 	}
-	productRepo := &mockProductRepoForRemove{
+	productRepo := &mockProductRepoForDelete{
 		deleteFunc: func(ctx context.Context, productID uuid.UUID) error {
 			if productID == p2 {
 				return nil
@@ -49,7 +49,7 @@ func TestRemoveProductUseCase_Execute(t *testing.T) {
 			return errors.New("wrong product deleted")
 		},
 	}
-	receptionRepo := &mockReceptionRepoForRemove{
+	receptionRepo := &mockReceptionRepoForDelete{
 		getActiveFunc: func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
 			return rec, nil
 		},
@@ -57,7 +57,7 @@ func TestRemoveProductUseCase_Execute(t *testing.T) {
 			return reception, nil
 		},
 	}
-	uc := usecases.NewRemoveProductUseCase(productRepo, receptionRepo)
+	uc := usecases.NewDeleteLastProductUseCase(productRepo, receptionRepo)
 	staff := entities.User{
 		ID:               uuid.New(),
 		Role:             entities.UserRolePVZStaff,
