@@ -10,7 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
-	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure"
+	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -40,7 +40,7 @@ DELETE FROM users;
 func TestPGUserRepository_CreateAndGetByEmail(t *testing.T) {
 	// Arrange
 	db := setupTestDB(t)
-	repo := infrastructure.NewPGUserRepository(db)
+	repo := repositories.NewPGUserRepository(db)
 	ctx := context.Background()
 	user := entities.User{
 		ID:               uuid.New(),

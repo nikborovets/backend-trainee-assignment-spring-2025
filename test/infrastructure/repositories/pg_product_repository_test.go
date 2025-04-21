@@ -10,7 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
-	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure"
+	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,7 +51,7 @@ DELETE FROM pvz;
 func TestPGProductRepository_Save_DeleteLast_ListByReception(t *testing.T) {
 	// Arrange
 	db := setupProductTestDB(t)
-	repo := infrastructure.NewPGProductRepository(db)
+	repo := repositories.NewPGProductRepository(db)
 	ctx := context.Background()
 	pvzID := uuid.New()
 	_, err := db.Exec(`INSERT INTO pvz (id, registration_date, city) VALUES ($1, $2, $3)`, pvzID, time.Now().UTC(), "Москва")

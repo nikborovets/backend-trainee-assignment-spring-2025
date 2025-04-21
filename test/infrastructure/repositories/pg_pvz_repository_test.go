@@ -10,7 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
-	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure"
+	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,7 +36,7 @@ DELETE FROM pvz;
 
 func TestPGPVZRepository_SaveAndList(t *testing.T) {
 	db := setupPVZTestDB(t)
-	repo := infrastructure.NewPGPVZRepository(db)
+	repo := repositories.NewPGPVZRepository(db)
 	ctx := context.Background()
 
 	pvz1 := entities.PVZ{
