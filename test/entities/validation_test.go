@@ -7,49 +7,61 @@ import (
 )
 
 func TestValidateCity(t *testing.T) {
+	// Arrange
 	valid := []entities.City{entities.CityMoscow, entities.CitySPB, entities.CityKazan}
 	invalid := []entities.City{"Воронеж", "Новосибирск", ""}
+
+	// Act & Assert
 	for _, c := range valid {
 		if !entities.ValidateCity(c) {
+			// Assert
 			t.Errorf("city %s should be valid", c)
 		}
 	}
 	for _, c := range invalid {
 		if entities.ValidateCity(c) {
+			// Assert
 			t.Errorf("city %s should be invalid", c)
 		}
 	}
 }
 
 func TestValidateUserRole(t *testing.T) {
-	if !entities.ValidateUserRole(entities.UserRoleClient) {
-		t.Error("client should be valid role")
+	// Arrange
+	valid := []entities.UserRole{entities.UserRoleClient, entities.UserRoleModerator}
+	invalid := []entities.UserRole{"pvz_staff", ""}
+
+	// Act & Assert
+	for _, r := range valid {
+		if !entities.ValidateUserRole(r) {
+			// Assert
+			t.Errorf("%s should be valid role", r)
+		}
 	}
-	if !entities.ValidateUserRole(entities.UserRoleModerator) {
-		t.Error("moderator should be valid role")
-	}
-	if entities.ValidateUserRole("pvz_staff") {
-		t.Error("pvz_staff should be invalid role")
-	}
-	if entities.ValidateUserRole("") {
-		t.Error("empty role should be invalid")
+	for _, r := range invalid {
+		if entities.ValidateUserRole(r) {
+			// Assert
+			t.Errorf("%s should be invalid role", r)
+		}
 	}
 }
 
 func TestValidateProductType(t *testing.T) {
-	if !entities.ValidateProductType(entities.ProductElectronics) {
-		t.Error("электроника should be valid type")
+	// Arrange
+	valid := []entities.ProductType{entities.ProductElectronics, entities.ProductClothes, entities.ProductShoes}
+	invalid := []entities.ProductType{"еда", ""}
+
+	// Act & Assert
+	for _, tpe := range valid {
+		if !entities.ValidateProductType(tpe) {
+			// Assert
+			t.Errorf("%s should be valid type", tpe)
+		}
 	}
-	if !entities.ValidateProductType(entities.ProductClothes) {
-		t.Error("одежда should be valid type")
-	}
-	if !entities.ValidateProductType(entities.ProductShoes) {
-		t.Error("обувь should be valid type")
-	}
-	if entities.ValidateProductType("еда") {
-		t.Error("еда should be invalid type")
-	}
-	if entities.ValidateProductType("") {
-		t.Error("empty type should be invalid")
+	for _, tpe := range invalid {
+		if entities.ValidateProductType(tpe) {
+			// Assert
+			t.Errorf("%s should be invalid type", tpe)
+		}
 	}
 }
