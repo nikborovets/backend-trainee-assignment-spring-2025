@@ -3,82 +3,62 @@ package usecases_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-type mockReceptionRepo struct {
-	getActiveFunc func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
-	saveFunc      func(ctx context.Context, reception entities.Reception) (entities.Reception, error)
+type mockReceptionRepoForCreate struct {
+	getActiveFn func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
+	saveFn      func(ctx context.Context, reception entities.Reception) (entities.Reception, error)
 }
 
-func (m *mockReceptionRepo) GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
-	return m.getActiveFunc(ctx, pvzID)
+func (m *mockReceptionRepoForCreate) GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
+	return m.getActiveFn(ctx, pvzID)
 }
-func (m *mockReceptionRepo) Save(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
-	return m.saveFunc(ctx, reception)
+func (m *mockReceptionRepoForCreate) Save(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
+	return m.saveFn(ctx, reception)
 }
 
 func TestCreateReceptionUseCase_Execute(t *testing.T) {
 	// Arrange
 	pvzID := uuid.New()
-	repo := &mockReceptionRepo{
-		getActiveFunc: func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
+	rec := entities.Reception{ID: uuid.New(), PVZID: pvzID, Status: entities.ReceptionInProgress}
+	user := entities.User{Role: entities.UserRolePVZStaff}
+
+	repo := &mockReceptionRepoForCreate{
+		getActiveFn: func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
 			return nil, nil
 		},
-		saveFunc: func(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
-			reception.ID = uuid.New()
-			return reception, nil
+		saveFn: func(ctx context.Context, r entities.Reception) (entities.Reception, error) {
+			return rec, nil
 		},
 	}
 	uc := usecases.NewCreateReceptionUseCase(repo)
-	staff := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRolePVZStaff,
-		Email:            "staff@avito.ru",
-		RegistrationDate: time.Now(),
-	}
+	ctx := context.Background()
 
 	// Act
-	rec, err := uc.Execute(context.Background(), staff, pvzID)
+	result, err := uc.Execute(ctx, user, pvzID)
 
 	// Assert
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if rec.PVZID != pvzID {
-		t.Errorf("expected pvzID %s, got %s", pvzID, rec.PVZID)
-	}
-	if rec.Status != entities.ReceptionInProgress {
-		t.Errorf("expected status in_progress, got %s", rec.Status)
-	}
+	require.NoError(t, err)
+	require.Equal(t, rec.PVZID, result.PVZID)
+	require.Equal(t, entities.ReceptionInProgress, result.Status)
 
-	// Arrange: не pvz_staff
-	client := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRoleClient,
-		Email:            "client@avito.ru",
-		RegistrationDate: time.Now(),
-	}
-	// Act
-	_, err = uc.Execute(context.Background(), client, pvzID)
-	// Assert
-	if err == nil {
-		t.Error("expected error for non-pvz_staff user")
-	}
+	// Не pvz_staff
+	user.Role = entities.UserRoleClient
+	_, err = uc.Execute(ctx, user, pvzID)
+	assert.Error(t, err)
 
-	// Arrange: уже есть открытая приёмка
-	repo.getActiveFunc = func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
+	// Уже есть открытая приёмка
+	repo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
 		r := &entities.Reception{Status: entities.ReceptionInProgress}
 		return r, nil
 	}
-	// Act
-	_, err = uc.Execute(context.Background(), staff, pvzID)
-	// Assert
-	if err == nil {
-		t.Error("expected error if active reception exists")
-	}
+	user.Role = entities.UserRolePVZStaff
+	_, err = uc.Execute(ctx, user, pvzID)
+	assert.Error(t, err)
 }

@@ -3,94 +3,68 @@ package usecases_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockReceptionRepoForClose struct {
-	getActiveFunc func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
-	saveFunc      func(ctx context.Context, reception entities.Reception) (entities.Reception, error)
+	getActiveFn func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
+	saveFn      func(ctx context.Context, reception entities.Reception) (entities.Reception, error)
 }
 
 func (m *mockReceptionRepoForClose) GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
-	return m.getActiveFunc(ctx, pvzID)
+	return m.getActiveFn(ctx, pvzID)
 }
 func (m *mockReceptionRepoForClose) Save(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
-	return m.saveFunc(ctx, reception)
+	return m.saveFn(ctx, reception)
 }
 
 func TestCloseReceptionUseCase_Execute(t *testing.T) {
 	// Arrange
 	pvzID := uuid.New()
-	rec := &entities.Reception{
-		ID:     uuid.New(),
-		PVZID:  pvzID,
-		Status: entities.ReceptionInProgress,
-	}
+	rec := entities.Reception{ID: uuid.New(), PVZID: pvzID, Status: entities.ReceptionInProgress}
+	user := entities.User{Role: entities.UserRolePVZStaff}
+
 	repo := &mockReceptionRepoForClose{
-		getActiveFunc: func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
-			return rec, nil
+		getActiveFn: func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
+			return &rec, nil
 		},
-		saveFunc: func(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
-			return reception, nil
+		saveFn: func(ctx context.Context, r entities.Reception) (entities.Reception, error) {
+			return r, nil
 		},
 	}
 	uc := usecases.NewCloseReceptionUseCase(repo)
-	staff := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRolePVZStaff,
-		Email:            "staff@avito.ru",
-		RegistrationDate: time.Now(),
-	}
+	ctx := context.Background()
 
 	// Act
-	closed, err := uc.Execute(context.Background(), staff, pvzID)
+	closed, err := uc.Execute(ctx, user, pvzID)
 
 	// Assert
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if closed.Status != entities.ReceptionClosed {
-		t.Errorf("expected status closed, got %s", closed.Status)
-	}
+	require.NoError(t, err)
+	require.Equal(t, entities.ReceptionClosed, closed.Status)
 
-	// Arrange: не pvz_staff
-	client := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRoleClient,
-		Email:            "client@avito.ru",
-		RegistrationDate: time.Now(),
-	}
-	// Act
-	_, err = uc.Execute(context.Background(), client, pvzID)
-	// Assert
-	if err == nil {
-		t.Error("expected error for non-pvz_staff user")
-	}
+	// Не pvz_staff
+	user.Role = entities.UserRoleClient
+	_, err = uc.Execute(ctx, user, pvzID)
+	assert.Error(t, err)
 
-	// Arrange: нет открытой приёмки
-	repo.getActiveFunc = func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
+	// Нет открытой приёмки
+	repo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
 		return nil, nil
 	}
-	// Act
-	_, err = uc.Execute(context.Background(), staff, pvzID)
-	// Assert
-	if err == nil {
-		t.Error("expected error if no open reception")
-	}
+	user.Role = entities.UserRolePVZStaff
+	_, err = uc.Execute(ctx, user, pvzID)
+	assert.Error(t, err)
 
-	// Arrange: приёмка уже закрыта
-	rec.Status = entities.ReceptionClosed
-	repo.getActiveFunc = func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
-		return rec, nil
+	// Уже закрыта
+	repo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
+		r := &entities.Reception{Status: entities.ReceptionClosed}
+		return r, nil
 	}
-	// Act
-	_, err = uc.Execute(context.Background(), staff, pvzID)
-	// Assert
-	if err == nil {
-		t.Error("expected error if reception already closed")
-	}
+	_, err = uc.Execute(ctx, user, pvzID)
+	assert.Error(t, err)
 }

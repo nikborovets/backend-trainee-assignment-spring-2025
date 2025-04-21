@@ -3,100 +3,74 @@ package usecases_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockProductRepo struct {
-	saveFunc func(ctx context.Context, product entities.Product) (entities.Product, error)
+	saveFn func(ctx context.Context, product entities.Product) (entities.Product, error)
 }
 
 func (m *mockProductRepo) Save(ctx context.Context, product entities.Product) (entities.Product, error) {
-	return m.saveFunc(ctx, product)
+	return m.saveFn(ctx, product)
 }
 
 type mockReceptionRepoForAdd struct {
-	getActiveFunc func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
+	getActiveFn func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
 }
 
 func (m *mockReceptionRepoForAdd) GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
-	return m.getActiveFunc(ctx, pvzID)
+	return m.getActiveFn(ctx, pvzID)
 }
 
 func TestAddProductUseCase_Execute(t *testing.T) {
 	// Arrange
 	pvzID := uuid.New()
-	rec := &entities.Reception{
-		ID:     uuid.New(),
-		PVZID:  pvzID,
-		Status: entities.ReceptionInProgress,
-	}
-	productRepo := &mockProductRepo{
-		saveFunc: func(ctx context.Context, product entities.Product) (entities.Product, error) {
-			product.ID = uuid.New()
+	rec := &entities.Reception{ID: pvzID, Status: entities.ReceptionInProgress}
+	product := entities.Product{ID: uuid.New(), ReceptionID: pvzID, Type: entities.ProductElectronics}
+	user := entities.User{Role: entities.UserRolePVZStaff}
+
+	uc := usecases.NewAddProductUseCase(
+		&mockProductRepo{saveFn: func(ctx context.Context, p entities.Product) (entities.Product, error) {
 			return product, nil
-		},
-	}
-	receptionRepo := &mockReceptionRepoForAdd{
-		getActiveFunc: func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
+		}},
+		&mockReceptionRepoForAdd{getActiveFn: func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
 			return rec, nil
-		},
-	}
-	uc := usecases.NewAddProductUseCase(productRepo, receptionRepo)
-	staff := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRolePVZStaff,
-		Email:            "staff@avito.ru",
-		RegistrationDate: time.Now(),
-	}
+		}},
+	)
+
+	ctx := context.Background()
 
 	// Act
-	product, err := uc.Execute(context.Background(), staff, pvzID, entities.ProductElectronics)
+	res, err := uc.Execute(ctx, user, pvzID, entities.ProductElectronics)
 
 	// Assert
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if product.Type != entities.ProductElectronics {
-		t.Errorf("expected type %s, got %s", entities.ProductElectronics, product.Type)
-	}
-	if product.ReceptionID != rec.ID {
-		t.Errorf("expected receptionID %s, got %s", rec.ID, product.ReceptionID)
-	}
+	require.NoError(t, err)
+	require.Equal(t, product, res)
 
-	// Arrange: не pvz_staff
-	client := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRoleClient,
-		Email:            "client@avito.ru",
-		RegistrationDate: time.Now(),
-	}
-	// Act
-	_, err = uc.Execute(context.Background(), client, pvzID, entities.ProductElectronics)
-	// Assert
-	if err == nil {
-		t.Error("expected error for non-pvz_staff user")
-	}
+	// Не pvz_staff
+	user.Role = entities.UserRoleClient
+	_, err = uc.Execute(ctx, user, pvzID, entities.ProductElectronics)
+	assert.Error(t, err)
 
-	// Arrange: невалидный тип
-	// Act
-	_, err = uc.Execute(context.Background(), staff, pvzID, "еда")
-	// Assert
-	if err == nil {
-		t.Error("expected error for invalid product type")
-	}
+	// Некорректный тип
+	user.Role = entities.UserRolePVZStaff
+	_, err = uc.Execute(ctx, user, pvzID, "еда")
+	assert.Error(t, err)
 
-	// Arrange: нет открытой приёмки
-	receptionRepo.getActiveFunc = func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
-		return nil, nil
-	}
-	// Act
-	_, err = uc.Execute(context.Background(), staff, pvzID, entities.ProductElectronics)
-	// Assert
-	if err == nil {
-		t.Error("expected error if no open reception")
-	}
+	// Нет открытой приёмки
+	uc = usecases.NewAddProductUseCase(
+		&mockProductRepo{saveFn: func(ctx context.Context, p entities.Product) (entities.Product, error) {
+			return product, nil
+		}},
+		&mockReceptionRepoForAdd{getActiveFn: func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
+			return nil, nil
+		}},
+	)
+	_, err = uc.Execute(ctx, user, pvzID, entities.ProductElectronics)
+	assert.Error(t, err)
 }

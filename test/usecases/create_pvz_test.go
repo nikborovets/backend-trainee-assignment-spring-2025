@@ -8,62 +8,44 @@ import (
 	"github.com/google/uuid"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-type mockPVZRepo struct {
-	saveFunc func(ctx context.Context, pvz entities.PVZ) (entities.PVZ, error)
+type mockPVZRepoForCreate struct {
+	saveFn func(ctx context.Context, pvz entities.PVZ) (entities.PVZ, error)
 }
 
-func (m *mockPVZRepo) Save(ctx context.Context, pvz entities.PVZ) (entities.PVZ, error) {
-	return m.saveFunc(ctx, pvz)
+func (m *mockPVZRepoForCreate) Save(ctx context.Context, pvz entities.PVZ) (entities.PVZ, error) {
+	return m.saveFn(ctx, pvz)
 }
 
 func TestCreatePVZUseCase_Execute(t *testing.T) {
 	// Arrange
-	repo := &mockPVZRepo{
-		saveFunc: func(ctx context.Context, pvz entities.PVZ) (entities.PVZ, error) {
-			pvz.ID = uuid.New()
+	pvz := entities.PVZ{ID: uuid.New(), City: entities.CityMoscow, RegistrationDate: time.Now()}
+	user := entities.User{Role: entities.UserRoleModerator}
+
+	repo := &mockPVZRepoForCreate{
+		saveFn: func(ctx context.Context, p entities.PVZ) (entities.PVZ, error) {
 			return pvz, nil
 		},
 	}
 	uc := usecases.NewCreatePVZUseCase(repo)
-	moderator := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRoleModerator,
-		Email:            "mod@avito.ru",
-		RegistrationDate: time.Now(),
-	}
+	ctx := context.Background()
 
 	// Act
-	pvz, err := uc.Execute(context.Background(), moderator, entities.CityMoscow)
+	res, err := uc.Execute(ctx, user, entities.CityMoscow)
 
 	// Assert
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if pvz.City != entities.CityMoscow {
-		t.Errorf("expected city %s, got %s", entities.CityMoscow, pvz.City)
-	}
+	require.NoError(t, err)
+	require.Equal(t, entities.CityMoscow, res.City)
 
-	// Arrange: невалидный город
-	// Act
-	_, err = uc.Execute(context.Background(), moderator, "Воронеж")
-	// Assert
-	if err == nil {
-		t.Error("expected error for invalid city")
-	}
+	// Некорректный город
+	_, err = uc.Execute(ctx, user, "Тверь")
+	assert.Error(t, err)
 
-	// Arrange: не модератор
-	client := entities.User{
-		ID:               uuid.New(),
-		Role:             entities.UserRoleClient,
-		Email:            "client@avito.ru",
-		RegistrationDate: time.Now(),
-	}
-	// Act
-	_, err = uc.Execute(context.Background(), client, entities.CityMoscow)
-	// Assert
-	if err == nil {
-		t.Error("expected error for non-moderator user")
-	}
+	// Не модератор
+	user.Role = entities.UserRoleClient
+	_, err = uc.Execute(ctx, user, entities.CityMoscow)
+	assert.Error(t, err)
 }

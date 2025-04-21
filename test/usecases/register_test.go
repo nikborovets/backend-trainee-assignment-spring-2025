@@ -3,75 +3,67 @@ package usecases_test
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockUserRepoForRegister struct {
-	createFunc     func(ctx context.Context, user entities.User, passwordHash string) (entities.User, error)
-	getByEmailFunc func(ctx context.Context, email string) (*entities.User, error)
+	createFn     func(ctx context.Context, user entities.User, passwordHash string) (entities.User, error)
+	getByEmailFn func(ctx context.Context, email string) (*entities.User, error)
 }
 
 func (m *mockUserRepoForRegister) Create(ctx context.Context, user entities.User, passwordHash string) (entities.User, error) {
-	return m.createFunc(ctx, user, passwordHash)
+	return m.createFn(ctx, user, passwordHash)
 }
 func (m *mockUserRepoForRegister) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
-	return m.getByEmailFunc(ctx, email)
+	return m.getByEmailFn(ctx, email)
 }
 
 func TestRegisterUseCase_Execute(t *testing.T) {
 	// Arrange
+	user := entities.User{ID: uuid.New(), Email: "test@avito.ru", Role: entities.UserRoleClient, RegistrationDate: time.Now()}
 	repo := &mockUserRepoForRegister{
-		createFunc: func(ctx context.Context, user entities.User, passwordHash string) (entities.User, error) {
-			user.ID = [16]byte{1}
+		createFn: func(ctx context.Context, u entities.User, hash string) (entities.User, error) {
 			return user, nil
 		},
-		getByEmailFunc: func(ctx context.Context, email string) (*entities.User, error) {
+		getByEmailFn: func(ctx context.Context, email string) (*entities.User, error) {
 			return nil, nil
 		},
 	}
 	uc := usecases.NewRegisterUseCase(repo)
+	ctx := context.Background()
 
 	// Act
-	user, err := uc.Execute(context.Background(), "test@avito.ru", "pass123", entities.UserRoleClient)
+	res, err := uc.Execute(ctx, "test@avito.ru", "password", entities.UserRoleClient)
 
 	// Assert
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if user.Email != "test@avito.ru" {
-		t.Errorf("expected email test@avito.ru, got %s", user.Email)
-	}
+	require.NoError(t, err)
+	require.Equal(t, user.Email, res.Email)
 
-	// Arrange: дублирующий email
-	repo.getByEmailFunc = func(ctx context.Context, email string) (*entities.User, error) {
-		u := user
-		return &u, nil
+	// Дубликат email
+	repo.getByEmailFn = func(ctx context.Context, email string) (*entities.User, error) {
+		return &user, nil
 	}
-	// Act
-	_, err = uc.Execute(context.Background(), "test@avito.ru", "pass123", entities.UserRoleClient)
-	// Assert
-	if err == nil {
-		t.Error("expected error for duplicate email")
-	}
+	_, err = uc.Execute(ctx, "test@avito.ru", "password", entities.UserRoleClient)
+	assert.Error(t, err)
 
-	// Arrange: невалидная роль
-	repo.getByEmailFunc = func(ctx context.Context, email string) (*entities.User, error) { return nil, nil }
-	// Act
-	_, err = uc.Execute(context.Background(), "test2@avito.ru", "pass123", "admin")
-	// Assert
-	if err == nil {
-		t.Error("expected error for invalid role")
+	// Некорректная роль
+	repo.getByEmailFn = func(ctx context.Context, email string) (*entities.User, error) {
+		return nil, nil
 	}
+	_, err = uc.Execute(ctx, "test@avito.ru", "password", "hacker")
+	assert.Error(t, err)
 
-	// Arrange: пустой email/пароль
-	_, err = uc.Execute(context.Background(), "", "pass123", entities.UserRoleClient)
-	if err == nil {
-		t.Error("expected error for empty email")
-	}
-	_, err = uc.Execute(context.Background(), "test3@avito.ru", "", entities.UserRoleClient)
-	if err == nil {
-		t.Error("expected error for empty password")
-	}
+	// Пустой email
+	_, err = uc.Execute(ctx, "", "password", entities.UserRoleClient)
+	assert.Error(t, err)
+
+	// Пустой пароль
+	_, err = uc.Execute(ctx, "test@avito.ru", "", entities.UserRoleClient)
+	assert.Error(t, err)
 }
