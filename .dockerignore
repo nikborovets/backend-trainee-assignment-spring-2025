@@ -1,0 +1,25 @@
+# Go
+# *.mod
+# *.sum
+*.test
+*.out
+*.exe
+*.log
+*.tmp
+*.swp
+
+# VCS
+.git
+.gitignore
+
+# Editor
+.vscode
+.idea
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+/test 

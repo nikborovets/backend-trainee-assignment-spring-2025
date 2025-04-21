@@ -50,5 +50,6 @@ go.sum
 
 # Если используете Air для хот-релоада
 tmp/
+service
 
 *best-practices-go*
