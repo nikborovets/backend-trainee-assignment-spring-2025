@@ -44,6 +44,8 @@ debug
 *.swo
 *~
 .history/
+.cursor/*
+.trae/*
 
 # Кэш Go
 go.sum

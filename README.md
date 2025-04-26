@@ -20,53 +20,68 @@
    cd backend-trainee-assignment-spring-2025
    ```
 
-2. **Запусти всё через Docker:**
+2. **Создай файл `.env` со следующими переменными:**
+   ```env
+   PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service?sslmode=disable
+   TEST_PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service_test?sslmode=disable
+   JWT_SECRET=test_secret
+   PORT=8080
+   GRPC_PORT=3000
+   ```
+
+3. **Запусти всё через Docker:**
    ```sh
    docker compose up --build -d
    ```
 
-3. **Проверь, что сервис жив:**
+4. **Проверь, что сервис жив:**
    ```sh
    curl -i http://localhost:8080/ping
    # Должно вернуть {"message":"pong"}
    ```
 
-4. **Swagger/OpenAPI:**  
+5. **Swagger/OpenAPI:**  
    Описание API — в файле `swagger.yaml` (можно открыть в Swagger Editor).
 
-5. **Получить тестовый JWT:**
+6. **Получить тестовый JWT:**
    ```sh
+   # Для модератора (нужен для создания ПВЗ):
    curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"moderator"}'
+   
+   # Для сотрудника ПВЗ (нужен для работы с приёмками и товарами):
    curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"pvz_staff"}'
+   
+   # Сохрани полученный токен:
+   export TOKEN="полученный_токен"
    ```
 
-6. **Примеры запросов:**
-   - Создать ПВЗ:
-     ```sh
-     curl -X POST http://localhost:8080/pvz/ -H 'Authorization: Bearer <TOKEN>' -H 'Content-Type: application/json' -d '{"city":"Москва"}'
-     ```
-   - Получить список ПВЗ:
-     ```sh
-     curl -X GET http://localhost:8080/pvz/ -H 'Authorization: Bearer <TOKEN>'
-     ```
-   - Создать приёмку:
-     ```sh
-     curl -X POST http://localhost:8080/receptions/ -H 'Authorization: Bearer <TOKEN>' -H 'Content-Type: application/json' -d '{"pvzId":"<PVZ_ID>"}'
-     ```
-   - Добавить товар:
-     ```sh
-     curl -X POST http://localhost:8080/products/ -H 'Authorization: Bearer <TOKEN>' -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"<PVZ_ID>"}'
-     ```
-   - Закрыть приёмку:
-     ```sh
-     curl -X POST http://localhost:8080/pvz/<PVZ_ID>/close_last_reception -H 'Authorization: Bearer <TOKEN>'
-     ```
-   - Удалить последний товар:
-     ```sh
-     curl -X POST http://localhost:8080/pvz/<PVZ_ID>/delete_last_product -H 'Authorization: Bearer <TOKEN>'
-     ```
+7. **Примеры запросов:**
+   ```sh
+   # Создать ПВЗ (нужен токен модератора):
+   curl -X POST http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"city":"Москва"}'
+   # Ответ: {"id":"42289a64-0f53-415a-8fe0-b8b800790e42", ...}
+   # Сохрани ID ПВЗ для следующих запросов
+   
+   # Получить список ПВЗ:
+   curl -X GET http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN"
+   
+   # Создать приёмку (нужен токен сотрудника ПВЗ):
+   curl -X POST http://localhost:8080/receptions/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
+   # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd", ...}
+   
+   # Добавить товар (нужен токен сотрудника ПВЗ):
+   curl -X POST http://localhost:8080/products/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
+   # Ответ: {"id":"38d841a0-dd3f-4582-8123-e31849ac0c30", ...}
+   
+   # Закрыть приёмку (нужен токен сотрудника ПВЗ):
+   curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/close_last_reception -H "Authorization: Bearer $TOKEN"
+   # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd","status":"close", ...}
+   
+   # Удалить последний товар (нужен токен сотрудника ПВЗ):
+   curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/delete_last_product -H "Authorization: Bearer $TOKEN"
+   ```
 
-7. **Остановить сервис:**
+8. **Остановить сервис:**
    ```sh
    docker compose down
    ```
@@ -79,8 +94,6 @@
 
 ## Запуск тестов и покрытие
 
-Для корректного подсчёта покрытия production-кода при тестах в test/* используйте:
-
 ```sh
 # Запуск всех тестов с подробным выводом
 go test -v ./test/...
@@ -88,17 +101,18 @@ go test -v ./test/...
 # Покрытие production-кода (всех пакетов internal) тестами из test/*
 go test -coverpkg=./internal/... ./test/...
 
+# Генерация отчета о покрытии
 go test -coverpkg=./internal/... -coverprofile=cover.out ./test/...
 go tool cover -func=cover.out
 
+# Открыть отчет в браузере
 go tool cover -html=cover.out
 ```
 
-> Если тесты будут перенесены в internal/*, достаточно будет обычного go test -cover ./... для покрытия.
+## Дополнительная информация
 
-**P.S.**
-- Все переменные окружения и настройки — в `.env` (по умолчанию всё работает из коробки).
-- Для CI/CD, Prometheus, gRPC — см. отдельные секции в README.
+- Все переменные окружения и настройки — в `.env`
+- Для CI/CD, Prometheus, gRPC — см. отдельные секции в README
 - Если что-то не работает — смотри логи: `docker compose logs --tail=100 app`
 - Для Swagger UI: https://editor.swagger.io/ (загрузи swagger.yaml)
 
@@ -165,7 +179,7 @@ go tool cover -html=cover.out
 
 - [x] **Тесты**
   - [x] Unit-тесты (покрытие > 75%)
-  - [x] Интеграционный тест сценария работы с ПВЗ и товарами (ручной прогон — все сценарии проверены, curl-скрипты есть)
+  - [ ] Интеграционный тест сценария работы с ПВЗ и товарами
 
 ### Дополнительные задания
 
