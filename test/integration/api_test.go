@@ -30,7 +30,7 @@ func init() {
 	// Вывод значения для отладки
 	dsn := os.Getenv("TEST_PG_DSN")
 	if dsn != "" {
-		println("TEST_PG_DSN loaded:", dsn)
+		println("TEST_PG_DSN loaded in api_integration_test")
 	}
 }
 

@@ -23,7 +23,7 @@ func init() {
 	// Вывод значения для отладки
 	dsn := os.Getenv("TEST_PG_DSN")
 	if dsn != "" {
-		println("TEST_PG_DSN loaded in pg_reception:", dsn)
+		println("TEST_PG_DSN loaded in pg_reception")
 	}
 }
 
