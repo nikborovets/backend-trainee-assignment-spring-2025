@@ -62,6 +62,7 @@ DELETE FROM pvz;
 }
 
 func TestPVZIntegration(t *testing.T) {
+	// Arrange: настраиваем тестовую базу данных и инициализируем репозитории с use cases
 	db := setupTestDB(t)
 	ctx := context.Background()
 
@@ -75,6 +76,8 @@ func TestPVZIntegration(t *testing.T) {
 	createReceptionUC := usecases.NewCreateReceptionUseCase(receptionRepo)
 	addProductUC := usecases.NewAddProductUseCase(productRepo, receptionRepo)
 	closeReceptionUC := usecases.NewCloseReceptionUseCase(receptionRepo)
+
+	// Act: выполняем сценарий тестирования
 
 	// 1. Создание ПВЗ
 	moderator := entities.User{
@@ -118,7 +121,7 @@ func TestPVZIntegration(t *testing.T) {
 	require.NotNil(t, closedReception)
 	require.Equal(t, entities.ReceptionClosed, closedReception.Status)
 
-	// Проверка, что все товары сохранились
+	// Assert: проверяем, что все товары сохранились
 	products, err := productRepo.ListByReception(ctx, reception.ID)
 	require.NoError(t, err)
 	require.Len(t, products, 50)

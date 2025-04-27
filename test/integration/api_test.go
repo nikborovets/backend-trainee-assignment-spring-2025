@@ -116,8 +116,11 @@ func setupTestServer(t *testing.T) (*gin.Engine, *sql.DB) {
 }
 
 func TestPVZAPIIntegration(t *testing.T) {
+	// Arrange: настраиваем тестовый сервер и базу данных
 	r, db := setupTestServer(t)
 	ctx := context.Background()
+
+	// Act: выполняем сценарий тестирования
 
 	// 1. Получаем токен модератора
 	moderatorToken := getToken(t, r, entities.UserRoleModerator)
@@ -145,7 +148,7 @@ func TestPVZAPIIntegration(t *testing.T) {
 	// 6. Закрываем приёмку
 	closeReception(t, r, staffToken, pvzID)
 
-	// 7. Проверяем, что все товары сохранились
+	// Assert: проверяем результаты
 	productRepo := repositories.NewPGProductRepository(db)
 	products, err := productRepo.ListByReception(ctx, receptionID)
 	require.NoError(t, err)
@@ -165,7 +168,6 @@ func getToken(t *testing.T, r *gin.Engine, role entities.UserRole) string {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 	require.Contains(t, response, "token")
-	t.Logf("Got token: %s", response["token"])
 	return response["token"]
 }
 
