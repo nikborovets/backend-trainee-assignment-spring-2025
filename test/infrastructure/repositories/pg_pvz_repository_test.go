@@ -3,16 +3,29 @@ package infrastructure_test
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	// Загружаем переменные окружения из .env файла
+	_ = godotenv.Load("../../../.env")
+
+	// Вывод значения для отладки
+	dsn := os.Getenv("TEST_PG_DSN")
+	if dsn != "" {
+		println("TEST_PG_DSN loaded in pg_pvz:", dsn)
+	}
+}
 
 func setupPVZTestDB(t *testing.T) *sql.DB {
 	dsn := configs.GetTestPGDSN()
@@ -28,6 +41,21 @@ CREATE TABLE IF NOT EXISTS pvz (
     registration_date TIMESTAMPTZ NOT NULL,
     city TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS reception (
+    id UUID PRIMARY KEY,
+    pvz_id UUID NOT NULL REFERENCES pvz(id),
+    status TEXT NOT NULL,
+    date_time TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE IF NOT EXISTS product (
+    id UUID PRIMARY KEY,
+    reception_id UUID NOT NULL REFERENCES reception(id),
+    type TEXT NOT NULL,
+    date_time TIMESTAMPTZ NOT NULL
+);
+-- Очищаем таблицы в правильном порядке с учетом внешних ключей
+DELETE FROM product;
+DELETE FROM reception;
 DELETE FROM pvz;
 `)
 	require.NoError(t, err)

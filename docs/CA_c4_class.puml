@@ -90,16 +90,16 @@ package "Interfaces" #LightBlue {
             + Login(req: LoginRequest) : Token
         }
         class PVZController {
-            + CreatePVZ(req: PVZDTO) : PVZDTO
-            + ListPVZ(params: ListParams) : List<FullPVZDTO>
+            + Create(ctx *gin.Context)
+            + List(ctx *gin.Context)
+            + CloseLastReception(ctx *gin.Context)
+            + DeleteLastProduct(ctx *gin.Context)
         }
         class ReceptionController {
-            + CreateReception(pvzId: UUID) : ReceptionDTO
-            + CloseLastReception(pvzId: UUID) : ReceptionDTO
+            + Create(ctx *gin.Context)
         }
         class ProductController {
-            + AddProduct(req: AddProductRequest) : ProductDTO
-            + DeleteLastProduct(pvzId: UUID) : void
+            + Add(ctx *gin.Context)
         }
     }
     package "DTOs" #LightBlue {
@@ -125,7 +125,7 @@ package "Interfaces" #LightBlue {
         }
         class ProductDTO {
             + id: UUID
-            + receivedAt: DateTime
+            + dateTime: DateTime
             + type: ProductType
             + receptionId: UUID
         }
@@ -155,22 +155,23 @@ package "Interfaces" #LightBlue {
     }
     package "Repositories" #LightBlue {
         interface UserRepository {
-            + Create(user: User) : User
-            + GetByEmail(email: string) : User?
+            + Create(ctx context.Context, user: User, passwordHash: string) : User
+            + GetByEmail(ctx context.Context, email: string) : (User?, string)
         }
         interface PVZRepository {
-            + Save(pvz: PVZ) : PVZ
-            + List(startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
+            + Save(ctx context.Context, pvz: PVZ) : PVZ
+            + List(ctx context.Context, startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
         }
         interface ReceptionRepository {
-            + Save(reception: Reception) : Reception
-            + CloseLast(pvzId: UUID) : Reception
-            + GetActive(pvzId: UUID) : Reception?
+            + Save(ctx context.Context, reception: Reception) : Reception
+            + CloseLast(ctx context.Context, pvzId: UUID, closedAt: DateTime) : error
+            + GetActive(ctx context.Context, pvzId: UUID) : Reception?
+            + ListByPVZ(ctx context.Context, pvzId: UUID) : List<Reception>
         }
         interface ProductRepository {
-            + Save(product: Product) : Product
-            + DeleteLast(pvzId: UUID) : void
-            + ListByReception(receptionId: UUID) : List<Product>
+            + Save(ctx context.Context, product: Product) : Product
+            + DeleteLast(ctx context.Context, receptionId: UUID) : Product?
+            + ListByReception(ctx context.Context, receptionId: UUID) : List<Product>
         }
     }
 }
@@ -191,27 +192,29 @@ package "Usecases" #LightGreen {
     }
     class CreatePVZUseCase {
         + NewCreatePVZUseCase(pvzRepo PVZRepository) : *CreatePVZUseCase
-        + Execute(pvz: PVZ) : PVZ
+        + Execute(ctx context.Context, user User, city City) : PVZ
     }
     class ListPVZsUseCase {
-        + NewListPVZsUseCase(pvzRepo PVZRepository) : *ListPVZsUseCase
-        + Execute(startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
+        + NewListPVZsUseCase(pvzRepo PVZRepository, receptionRepo ReceptionRepository, productRepo ProductRepository) : *ListPVZsUseCase
+        + Execute(ctx context.Context, user User, startDate?: DateTime, endDate?: DateTime, page: int, limit: int) : List<PVZ>
+        + GetReceptionsByPVZ(ctx context.Context, pvzId: UUID) : List<Reception>
+        + GetProductsByReception(ctx context.Context, receptionId: UUID) : List<Product>
     }
     class CreateReceptionUseCase {
         + NewCreateReceptionUseCase(repo ReceptionRepository) : *CreateReceptionUseCase
-        + Execute(pvzId: UUID) : Reception
+        + Execute(ctx context.Context, user User, pvzId: UUID) : Reception
     }
     class AddProductUseCase {
-        + NewAddProductUseCase(repo ProductRepository) : *AddProductUseCase
-        + Execute(pvzId: UUID, type: ProductType) : Product
+        + NewAddProductUseCase(productRepo ProductRepository, receptionRepo ReceptionRepositoryForAdd) : *AddProductUseCase
+        + Execute(ctx context.Context, user User, pvzId: UUID, type: ProductType) : Product
     }
     class CloseReceptionUseCase {
-        + NewCloseReceptionUseCase(repo ReceptionRepository) : *CloseReceptionUseCase
-        + Execute(pvzId: UUID) : Reception
+        + NewCloseReceptionUseCase(repo ReceptionRepositoryForClose) : *CloseReceptionUseCase
+        + Execute(ctx context.Context, user User, pvzId: UUID) : Reception
     }
     class DeleteLastProductUseCase {
-        + NewDeleteLastProductUseCase(repo ProductRepository) : *DeleteLastProductUseCase
-        + Execute(pvzId: UUID) : void
+        + NewDeleteLastProductUseCase(productRepo ProductRepositoryForDelete, receptionRepo ReceptionRepositoryForClose) : *DeleteLastProductUseCase
+        + Execute(ctx context.Context, user User, pvzId: UUID) : error
     }
 }
 
@@ -221,6 +224,7 @@ package "Entities" #LightYellow {
         + id: UUID
         + email: string
         + role: UserRole
+        + registrationDate: DateTime
     }
     enum UserRole {
         client
@@ -232,7 +236,7 @@ package "Entities" #LightYellow {
         + id: UUID
         + registrationDate: DateTime
         + city: City
-        + receptions: List<Reception>
+        + receptions: List<UUID>
     }
     enum City {
         Москва
@@ -245,7 +249,12 @@ package "Entities" #LightYellow {
         + dateTime: DateTime
         + status: ReceptionStatus
         + pvzId: UUID
-        + products: List<Product>
+        + products: List<UUID>
+        
+        + IsOpen() : bool
+        + AddProduct(productID: UUID) : error
+        + RemoveLastProduct() : (UUID, error)
+        + Close() : error
     }
     enum ReceptionStatus {
         in_progress
@@ -254,7 +263,7 @@ package "Entities" #LightYellow {
 
     class Product {
         + id: UUID
-        + receivedAt: DateTime
+        + dateTime: DateTime
         + type: ProductType
         + receptionId: UUID
     }

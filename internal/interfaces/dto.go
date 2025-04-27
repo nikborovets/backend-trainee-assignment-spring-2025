@@ -39,12 +39,41 @@ type ReceptionDTO struct {
 	PVZID    uuid.UUID                `json:"pvzId"`
 }
 
+// ReceptionListItemDTO - структура для возврата Reception в API ответе без поля products
+type ReceptionListItemDTO struct {
+	ID       uuid.UUID                `json:"id"`
+	PVZID    uuid.UUID                `json:"pvzId"`
+	Status   entities.ReceptionStatus `json:"status"`
+	DateTime time.Time                `json:"dateTime"`
+	// Поле Products здесь специально отсутствует
+}
+
+// ToReceptionListItemDTO конвертирует Reception в DTO для API ответа
+func ToReceptionListItemDTO(reception entities.Reception) ReceptionListItemDTO {
+	return ReceptionListItemDTO{
+		ID:       reception.ID,
+		PVZID:    reception.PVZID,
+		Status:   reception.Status,
+		DateTime: reception.DateTime,
+	}
+}
+
 // ProductDTO — DTO товара
 type ProductDTO struct {
 	ID          uuid.UUID            `json:"id"`
-	ReceivedAt  time.Time            `json:"receivedAt"`
+	DateTime    time.Time            `json:"dateTime"`
 	Type        entities.ProductType `json:"type"`
 	ReceptionID uuid.UUID            `json:"receptionId"`
+}
+
+// ToProductDTO преобразует доменную модель Product в DTO для API
+func ToProductDTO(product entities.Product) ProductDTO {
+	return ProductDTO{
+		ID:          product.ID,
+		DateTime:    product.DateTime,
+		Type:        product.Type,
+		ReceptionID: product.ReceptionID,
+	}
 }
 
 // ReceptionWithProductsDTO — приёмка + товары
@@ -78,4 +107,30 @@ type ListParams struct {
 type AddProductRequest struct {
 	PVZID uuid.UUID            `json:"pvzId"`
 	Type  entities.ProductType `json:"type"`
+}
+
+// PVZListItemDTO - структура для возврата ПВЗ в API ответе /pvz GET
+type PVZListItemDTO struct {
+	ID               uuid.UUID     `json:"id"`
+	RegistrationDate time.Time     `json:"registrationDate"`
+	City             entities.City `json:"city"`
+	// Поле Receptions здесь специально отсутствует
+}
+
+// ToPVZListItemDTO конвертирует PVZ в DTO для API ответа
+func ToPVZListItemDTO(pvz entities.PVZ) PVZListItemDTO {
+	return PVZListItemDTO{
+		ID:               pvz.ID,
+		RegistrationDate: pvz.RegistrationDate,
+		City:             pvz.City,
+	}
+}
+
+// PVZListResponseItem - структура для элемента в ответе списка ПВЗ
+type PVZListResponseItem struct {
+	PVZ        PVZListItemDTO `json:"pvz"`
+	Receptions []struct {
+		Reception ReceptionListItemDTO `json:"reception"` // Используем ReceptionListItemDTO вместо entities.Reception
+		Products  []ProductDTO         `json:"products"`
+	} `json:"receptions"`
 }

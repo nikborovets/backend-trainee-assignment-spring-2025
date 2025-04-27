@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
+	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/interfaces"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
 )
 
@@ -86,34 +87,43 @@ func (c *PVZController) List(ctx *gin.Context) {
 		ctx.JSON(http.StatusForbidden, gin.H{"message": err.Error()})
 		return
 	}
-	var result []struct {
-		PVZ        entities.PVZ `json:"pvz"`
-		Receptions []struct {
-			Reception entities.Reception `json:"reception"`
-			Products  []entities.Product `json:"products"`
-		} `json:"receptions"`
-	}
+
+	// Используем новый DTO для правильного форматирования ответа
+	var result []interfaces.PVZListResponseItem
+
 	for _, pvz := range pvzs {
+		// Создаем DTO для текущего ПВЗ
+		pvzDTO := interfaces.ToPVZListItemDTO(pvz)
+
 		// Для каждого PVZ — получить все приёмки и продукты
 		receptions, _ := c.ListUC.GetReceptionsByPVZ(ctx.Request.Context(), pvz.ID) // предполагается, что usecase расширен
 		var recs []struct {
-			Reception entities.Reception `json:"reception"`
-			Products  []entities.Product `json:"products"`
+			Reception interfaces.ReceptionListItemDTO `json:"reception"`
+			Products  []interfaces.ProductDTO         `json:"products"`
 		}
+
 		for _, rec := range receptions {
+			// Преобразуем Reception в ReceptionListItemDTO, исключая поле Products
+			recDTO := interfaces.ToReceptionListItemDTO(rec)
+
 			products, _ := c.ListUC.GetProductsByReception(ctx.Request.Context(), rec.ID)
+
+			// Конвертируем доменные модели продуктов в DTO
+			var productDTOs []interfaces.ProductDTO
+			for _, product := range products {
+				productDTOs = append(productDTOs, interfaces.ToProductDTO(product))
+			}
+
 			recs = append(recs, struct {
-				Reception entities.Reception `json:"reception"`
-				Products  []entities.Product `json:"products"`
-			}{Reception: rec, Products: products})
+				Reception interfaces.ReceptionListItemDTO `json:"reception"`
+				Products  []interfaces.ProductDTO         `json:"products"`
+			}{Reception: recDTO, Products: productDTOs})
 		}
-		result = append(result, struct {
-			PVZ        entities.PVZ `json:"pvz"`
-			Receptions []struct {
-				Reception entities.Reception `json:"reception"`
-				Products  []entities.Product `json:"products"`
-			} `json:"receptions"`
-		}{PVZ: pvz, Receptions: recs})
+
+		result = append(result, interfaces.PVZListResponseItem{
+			PVZ:        pvzDTO,
+			Receptions: recs,
+		})
 	}
 	ctx.JSON(http.StatusOK, result)
 }

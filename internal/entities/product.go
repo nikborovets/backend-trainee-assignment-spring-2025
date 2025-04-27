@@ -10,7 +10,7 @@ import (
 // id — UUID
 // receptionId — UUID
 // type — электроника/одежда/обувь
-// receivedAt — дата и время приёма товара (момент добавления в систему)
+// dateTime — дата и время приёма товара (момент добавления в систему)
 
 type ProductType string
 
@@ -24,7 +24,7 @@ type Product struct {
 	ID          uuid.UUID   `json:"id"`
 	ReceptionID uuid.UUID   `json:"receptionId"`
 	Type        ProductType `json:"type"`
-	ReceivedAt  time.Time   `json:"receivedAt"`
+	DateTime    time.Time   `json:"dateTime"`
 }
 
 // Проверяет, валиден ли тип товара

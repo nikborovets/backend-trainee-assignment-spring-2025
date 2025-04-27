@@ -1,19 +1,18 @@
-version: '3.9'
-
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,7 +24,7 @@ services:
         condition: service_healthy
     volumes:
       - ./internal/infrastructure/migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://postgres:postgres@db:5432/postgres?sslmode=disable", "up"]
+    command: ["-path", "/migrations", "-database", "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable", "up"]
     restart: on-failure
 
   app:
@@ -34,17 +33,29 @@ services:
       migrate:
         condition: service_completed_successfully
     environment:
-      JWT_SECRET: devsecret
-      PG_DSN: postgres://postgres:postgres@db:5432/postgres?sslmode=disable
-      GIN_MODE: release
+      JWT_SECRET: ${JWT_SECRET}
+      PG_DSN: ${PG_DSN}
+      GIN_MODE: ${GIN_MODE}
     ports:
-      - "8080:8080"
+      - "${APP_PORT}:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: always
+    
+  test:
+    build:
+      context: .
+      target: tester
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TEST_PG_DSN: ${TEST_PG_DSN_DOCKER}
+    profiles:
+      - test
 
 volumes:
-  pgdata: 
+  pgdata:
