@@ -3,17 +3,30 @@ package infrastructure_test
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func init() {
+	// Загружаем переменные окружения из .env файла
+	_ = godotenv.Load("../../../.env")
+
+	// Вывод значения для отладки
+	dsn := os.Getenv("TEST_PG_DSN")
+	if dsn != "" {
+		println("TEST_PG_DSN loaded in pg_user")
+	}
+}
 
 func setupTestDB(t *testing.T) *sql.DB {
 	dsn := configs.GetTestPGDSN()

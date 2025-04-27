@@ -26,8 +26,8 @@ func NewPGProductRepository(db *sql.DB) *PGProductRepository {
 // Save сохраняет (insert) товар
 func (r *PGProductRepository) Save(ctx context.Context, p entities.Product) (entities.Product, error) {
 	q := r.qb.Insert("product").
-		Columns("id", "reception_id", "type", "received_at").
-		Values(p.ID, p.ReceptionID, p.Type, p.ReceivedAt).
+		Columns("id", "reception_id", "type", "date_time").
+		Values(p.ID, p.ReceptionID, p.Type, p.DateTime).
 		Suffix("RETURNING id")
 	row := q.RunWith(r.db).QueryRowContext(ctx)
 	var id uuid.UUID
@@ -38,17 +38,24 @@ func (r *PGProductRepository) Save(ctx context.Context, p entities.Product) (ent
 	return p, nil
 }
 
+// Delete удаляет товар по его идентификатору
+func (r *PGProductRepository) Delete(ctx context.Context, productID uuid.UUID) error {
+	q := r.qb.Delete("product").Where(squirrel.Eq{"id": productID})
+	_, err := q.RunWith(r.db).ExecContext(ctx)
+	return err
+}
+
 // DeleteLast удаляет последний добавленный товар по приёмке (LIFO)
 func (r *PGProductRepository) DeleteLast(ctx context.Context, receptionID uuid.UUID) (*entities.Product, error) {
-	q := r.qb.Select("id", "reception_id", "type", "received_at").
+	q := r.qb.Select("id", "reception_id", "type", "date_time").
 		From("product").
 		Where(squirrel.Eq{"reception_id": receptionID}).
-		OrderBy("received_at DESC").
+		OrderBy("date_time DESC").
 		Limit(1)
 	row := q.RunWith(r.db).QueryRowContext(ctx)
 	var p entities.Product
 	var typ string
-	if err := row.Scan(&p.ID, &p.ReceptionID, &typ, &p.ReceivedAt); err != nil {
+	if err := row.Scan(&p.ID, &p.ReceptionID, &typ, &p.DateTime); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -66,10 +73,10 @@ func (r *PGProductRepository) DeleteLast(ctx context.Context, receptionID uuid.U
 
 // ListByReception возвращает все товары по приёмке
 func (r *PGProductRepository) ListByReception(ctx context.Context, receptionID uuid.UUID) ([]entities.Product, error) {
-	q := r.qb.Select("id", "reception_id", "type", "received_at").
+	q := r.qb.Select("id", "reception_id", "type", "date_time").
 		From("product").
 		Where(squirrel.Eq{"reception_id": receptionID}).
-		OrderBy("received_at ASC")
+		OrderBy("date_time ASC")
 	rows, err := q.RunWith(r.db).QueryContext(ctx)
 	if err != nil {
 		return nil, err
@@ -79,7 +86,7 @@ func (r *PGProductRepository) ListByReception(ctx context.Context, receptionID u
 	for rows.Next() {
 		var p entities.Product
 		var typ string
-		if err := rows.Scan(&p.ID, &p.ReceptionID, &typ, &p.ReceivedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.ReceptionID, &typ, &p.DateTime); err != nil {
 			return nil, err
 		}
 		p.Type = entities.ProductType(typ)

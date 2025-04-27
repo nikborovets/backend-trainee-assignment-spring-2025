@@ -3,16 +3,30 @@ package infrastructure_test
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	// Загружаем переменные окружения из .env файла
+	_ = godotenv.Load("../../../.env")
+
+	// Вывод значения для отладки
+	dsn := os.Getenv("TEST_PG_DSN")
+	if dsn != "" {
+		println("TEST_PG_DSN loaded in pg_product")
+	}
+}
 
 func setupProductTestDB(t *testing.T) *sql.DB {
 	dsn := configs.GetTestPGDSN()
@@ -38,8 +52,9 @@ CREATE TABLE IF NOT EXISTS product (
     id UUID PRIMARY KEY,
     reception_id UUID NOT NULL REFERENCES reception(id),
     type TEXT NOT NULL,
-    received_at TIMESTAMPTZ NOT NULL
+    date_time TIMESTAMPTZ NOT NULL
 );
+-- Очищаем таблицы в правильном порядке с учетом внешних ключей
 DELETE FROM product;
 DELETE FROM reception;
 DELETE FROM pvz;
@@ -64,19 +79,19 @@ func TestPGProductRepository_Save_DeleteLast_ListByReception(t *testing.T) {
 		ID:          uuid.New(),
 		ReceptionID: recID,
 		Type:        entities.ProductElectronics,
-		ReceivedAt:  time.Now().Add(-2 * time.Hour).UTC(),
+		DateTime:    time.Now().Add(-2 * time.Hour).UTC(),
 	}
 	p2 := entities.Product{
 		ID:          uuid.New(),
 		ReceptionID: recID,
 		Type:        entities.ProductClothes,
-		ReceivedAt:  time.Now().Add(-1 * time.Hour).UTC(),
+		DateTime:    time.Now().Add(-1 * time.Hour).UTC(),
 	}
 	p3 := entities.Product{
 		ID:          uuid.New(),
 		ReceptionID: recID,
 		Type:        entities.ProductShoes,
-		ReceivedAt:  time.Now().UTC(),
+		DateTime:    time.Now().UTC(),
 	}
 
 	// Act: save
@@ -105,4 +120,62 @@ func TestPGProductRepository_Save_DeleteLast_ListByReception(t *testing.T) {
 	list, err = repo.ListByReception(ctx, recID)
 	require.NoError(t, err)
 	require.Len(t, list, 2)
+}
+
+// TestPGProductRepository_ListByReception проверяет получение всех товаров по приёмке
+func TestPGProductRepository_ListByReception(t *testing.T) {
+	db := setupProductTestDB(t)
+	repo := repositories.NewPGProductRepository(db)
+
+	ctx := context.Background()
+
+	// Создаем ПВЗ перед созданием приёмки (из-за внешнего ключа)
+	pvzID := uuid.New()
+	_, err := db.Exec(`INSERT INTO pvz (id, registration_date, city) VALUES ($1, $2, $3)`,
+		pvzID, time.Now().UTC(), "Москва")
+	require.NoError(t, err)
+
+	// Создаем приёмку перед созданием товаров (из-за внешнего ключа)
+	recID := uuid.New()
+	_, err = db.Exec(`INSERT INTO reception (id, pvz_id, status, date_time) VALUES ($1, $2, $3, $4)`,
+		recID, pvzID, "in_progress", time.Now().UTC())
+	require.NoError(t, err)
+
+	// Добавляем несколько товаров
+	products := []entities.Product{
+		{
+			ID:          uuid.New(),
+			ReceptionID: recID,
+			Type:        entities.ProductElectronics,
+			DateTime:    time.Now().Add(-2 * time.Hour).UTC(),
+		},
+		{
+			ID:          uuid.New(),
+			ReceptionID: recID,
+			Type:        entities.ProductClothes,
+			DateTime:    time.Now().Add(-1 * time.Hour).UTC(),
+		},
+		{
+			ID:          uuid.New(),
+			ReceptionID: recID,
+			Type:        entities.ProductShoes,
+			DateTime:    time.Now().UTC(),
+		},
+	}
+
+	// Сохраняем в БД
+	for _, p := range products {
+		_, err := repo.Save(ctx, p)
+		require.NoError(t, err)
+	}
+
+	// Получаем все товары для приёмки
+	found, err := repo.ListByReception(ctx, recID)
+	require.NoError(t, err)
+	require.Len(t, found, 3)
+
+	// Проверяем сортировку по времени (должны быть в том же порядке)
+	assert.Equal(t, products[0].ID, found[0].ID)
+	assert.Equal(t, products[1].ID, found[1].ID)
+	assert.Equal(t, products[2].ID, found[2].ID)
 }

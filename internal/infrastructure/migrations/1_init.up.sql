@@ -1,3 +1,9 @@
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'pvz_service') THEN
+        CREATE DATABASE pvz_service;
+    END IF;
+END $$; 
 -- users table migration
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY,
@@ -28,5 +34,5 @@ CREATE TABLE IF NOT EXISTS product (
     id UUID PRIMARY KEY,
     reception_id UUID NOT NULL REFERENCES reception(id),
     type TEXT NOT NULL,
-    received_at TIMESTAMPTZ NOT NULL
-); 
+    date_time TIMESTAMPTZ NOT NULL
+);

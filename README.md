@@ -15,61 +15,72 @@
 ## 🚀 Быстрый старт
 
 1. **Клонируй репозиторий:**
-   ```sh
-   git clone https://github.com/nikborovets/backend-trainee-assignment-spring-2025.git
-   cd backend-trainee-assignment-spring-2025
-   ```
+  ```sh
+  git clone https://github.com/nikborovets/backend-trainee-assignment-spring-2025.git
+  cd backend-trainee-assignment-spring-2025
+  ```
 
-2. **Запусти всё через Docker:**
-   ```sh
-   docker compose up --build -d
-   ```
+2. **Создай файл `.env` (пример конфигурации: `.env.example`).**
+  ```sh
+  make setup-env
+  ```
 
-3. **Проверь, что сервис жив:**
-   ```sh
-   curl -i http://localhost:8080/ping
-   # Должно вернуть {"message":"pong"}
-   ```
+3. **Запусти всё через Docker:**
+  ```sh
+  docker compose up --build -d
+  ```
 
-4. **Swagger/OpenAPI:**  
+4. **Проверь, что сервис жив:**
+  ```sh
+  curl -i http://localhost:8080/ping
+  # Должно вернуть {"message":"pong"}
+  ```
+
+5. **Swagger/OpenAPI:**  
    Описание API — в файле `swagger.yaml` (можно открыть в Swagger Editor).
 
-5. **Получить тестовый JWT:**
-   ```sh
-   curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"moderator"}'
-   curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"pvz_staff"}'
-   ```
+6. **Получить тестовый JWT:**
+  ```sh
+  # Для модератора (нужен для создания ПВЗ):
+  curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"moderator"}'
+  
+  # Для сотрудника ПВЗ (нужен для работы с приёмками и товарами):
+  curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"pvz_staff"}'
+  
+  # Сохрани полученный токен:
+  export TOKEN="полученный_токен"
+  ```
 
-6. **Примеры запросов:**
-   - Создать ПВЗ:
-     ```sh
-     curl -X POST http://localhost:8080/pvz/ -H 'Authorization: Bearer <TOKEN>' -H 'Content-Type: application/json' -d '{"city":"Москва"}'
-     ```
-   - Получить список ПВЗ:
-     ```sh
-     curl -X GET http://localhost:8080/pvz/ -H 'Authorization: Bearer <TOKEN>'
-     ```
-   - Создать приёмку:
-     ```sh
-     curl -X POST http://localhost:8080/receptions/ -H 'Authorization: Bearer <TOKEN>' -H 'Content-Type: application/json' -d '{"pvzId":"<PVZ_ID>"}'
-     ```
-   - Добавить товар:
-     ```sh
-     curl -X POST http://localhost:8080/products/ -H 'Authorization: Bearer <TOKEN>' -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"<PVZ_ID>"}'
-     ```
-   - Закрыть приёмку:
-     ```sh
-     curl -X POST http://localhost:8080/pvz/<PVZ_ID>/close_last_reception -H 'Authorization: Bearer <TOKEN>'
-     ```
-   - Удалить последний товар:
-     ```sh
-     curl -X POST http://localhost:8080/pvz/<PVZ_ID>/delete_last_product -H 'Authorization: Bearer <TOKEN>'
-     ```
+7. **Примеры запросов:**
+  ```sh
+  # Создать ПВЗ (нужен токен модератора):
+  curl -X POST http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"city":"Москва"}'
+  # Ответ: {"id":"<PVZ_ID>", ...}
+  # Сохрани ID ПВЗ для следующих запросов
+  
+  # Получить список ПВЗ:
+  curl -X GET http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN"
+  
+  # Создать приёмку (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/receptions/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"pvzId":"<PVZ_ID>"}'
+  # Ответ: {"id":"<RECEPTION_ID>", ...}
+  
+  # Добавить товар (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/products/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"<PVZ_ID>"}'
+  # Ответ: {"id":"<PRODUCT_ID>", ...}
+  
+  # Закрыть приёмку (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/pvz/<PVZ_ID>/close_last_reception -H "Authorization: Bearer $TOKEN"
+  # Ответ: {"id":"<RECEPTION_ID>","status":"close", ...}
+  
+  # Удалить последний товар (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/pvz/<PVZ_ID>/delete_last_product -H "Authorization: Bearer $TOKEN"
+  ```
 
-7. **Остановить сервис:**
-   ```sh
-   docker compose down
-   ```
+8. **Остановить сервис:**
+  ```sh
+  docker compose down
+  ```
 
 ## Порты
 
@@ -77,28 +88,44 @@
 - **gRPC**: 3000
 - **Prometheus**: 9000
 
-## Запуск тестов и покрытие
+## 🚀 Запуск приложения
 
-Для корректного подсчёта покрытия production-кода при тестах в test/* используйте:
+```sh
+make docker-build    # Собрать образы
+make docker-up       # Запустить базу, миграции и приложение
+make docker-logs     # Смотреть логи приложения
+make docker-down     # Остановить и удалить контейнеры
+```
+
+## 🧪 Запуск тестов
+
+```sh
+make docker-build-test   # Собрать образ для тестов (нужно один раз или после изменений)
+make docker-test         # Запустить тесты в Docker
+```
+
+## Запуск тестов и покрытие
 
 ```sh
 # Запуск всех тестов с подробным выводом
 go test -v ./test/...
+go test -v -count=1 ./test/...
 
 # Покрытие production-кода (всех пакетов internal) тестами из test/*
 go test -coverpkg=./internal/... ./test/...
 
+# Генерация отчета о покрытии
 go test -coverpkg=./internal/... -coverprofile=cover.out ./test/...
 go tool cover -func=cover.out
 
+# Открыть отчет в браузере
 go tool cover -html=cover.out
 ```
 
-> Если тесты будут перенесены в internal/*, достаточно будет обычного go test -cover ./... для покрытия.
+## Дополнительная информация
 
-**P.S.**
-- Все переменные окружения и настройки — в `.env` (по умолчанию всё работает из коробки).
-- Для CI/CD, Prometheus, gRPC — см. отдельные секции в README.
+- Все переменные окружения и настройки — в `.env`
+- Для CI/CD, Prometheus, gRPC — см. отдельные секции в README
 - Если что-то не работает — смотри логи: `docker compose logs --tail=100 app`
 - Для Swagger UI: https://editor.swagger.io/ (загрузи swagger.yaml)
 
@@ -165,14 +192,14 @@ go tool cover -html=cover.out
 
 - [x] **Тесты**
   - [x] Unit-тесты (покрытие > 75%)
-  - [x] Интеграционный тест сценария работы с ПВЗ и товарами (ручной прогон — все сценарии проверены, curl-скрипты есть)
+  - [x] Интеграционный тест сценария работы с ПВЗ и товарами
 
 ### Дополнительные задания
 
 - [x] **Авторизация**
   - [x] Полная реализация авторизации (регистрация и логин)
 
-- [ ] **GRPC**
+- [ ] **gRPC**
   - [ ] Настройка gRPC сервера
   - [ ] Реализация метода GetPVZList
 
@@ -187,3 +214,8 @@ go tool cover -html=cover.out
 
 - [ ] **Кодогенерация**
   - [ ] Настройка генерации DTO по OpenAPI схеме
+
+### Общий прогресс
+
+- [x] **Базовый функционал** - 100% завершен
+- [x] **Дополнительные задания** - 1/5 завершено (реализована авторизация)
