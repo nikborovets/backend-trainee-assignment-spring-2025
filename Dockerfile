@@ -7,10 +7,19 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o app ./cmd/service/main.go
 
+# Отдельный образ для тестов
+FROM golang:1.24 AS tester
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+# По умолчанию команда запускает все тесты
+CMD ["go", "test", "-v", "./test/..."]
+
 FROM gcr.io/distroless/base-debian12
 WORKDIR /app
 COPY --from=builder /app/app /app/app
 COPY .env /app/.env
 ENV GIN_MODE=release
 EXPOSE 8080
-CMD ["/app/app"] 
+CMD ["/app/app"]
