@@ -15,76 +15,76 @@
 ## 🚀 Быстрый старт
 
 1. **Клонируй репозиторий:**
-   ```sh
-   git clone https://github.com/nikborovets/backend-trainee-assignment-spring-2025.git
-   cd backend-trainee-assignment-spring-2025
-   ```
+  ```sh
+  git clone https://github.com/nikborovets/backend-trainee-assignment-spring-2025.git
+  cd backend-trainee-assignment-spring-2025
+  ```
 
 2. **Создай файл `.env` со следующими переменными:**
-   ```env
-   PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service?sslmode=disable
-   TEST_PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service_test?sslmode=disable
-   JWT_SECRET=test_secret
-   PORT=8080
-   GRPC_PORT=3000
-   ```
+  ```env
+  PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service?sslmode=disable
+  TEST_PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service_test?sslmode=disable
+  JWT_SECRET=test_secret
+  PORT=8080
+  GRPC_PORT=3000
+  ```
 
 3. **Запусти всё через Docker:**
-   ```sh
-   docker compose up --build -d
-   ```
+  ```sh
+  docker compose up --build -d
+  ```
 
 4. **Проверь, что сервис жив:**
-   ```sh
-   curl -i http://localhost:8080/ping
-   # Должно вернуть {"message":"pong"}
-   ```
+  ```sh
+  curl -i http://localhost:8080/ping
+  # Должно вернуть {"message":"pong"}
+  ```
 
 5. **Swagger/OpenAPI:**  
    Описание API — в файле `swagger.yaml` (можно открыть в Swagger Editor).
 
 6. **Получить тестовый JWT:**
-   ```sh
-   # Для модератора (нужен для создания ПВЗ):
-   curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"moderator"}'
-   
-   # Для сотрудника ПВЗ (нужен для работы с приёмками и товарами):
-   curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"pvz_staff"}'
-   
-   # Сохрани полученный токен:
-   export TOKEN="полученный_токен"
-   ```
+  ```sh
+  # Для модератора (нужен для создания ПВЗ):
+  curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"moderator"}'
+  
+  # Для сотрудника ПВЗ (нужен для работы с приёмками и товарами):
+  curl -X POST http://localhost:8080/dummyLogin -H 'Content-Type: application/json' -d '{"role":"pvz_staff"}'
+  
+  # Сохрани полученный токен:
+  export TOKEN="полученный_токен"
+  ```
 
 7. **Примеры запросов:**
-   ```sh
-   # Создать ПВЗ (нужен токен модератора):
-   curl -X POST http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"city":"Москва"}'
-   # Ответ: {"id":"42289a64-0f53-415a-8fe0-b8b800790e42", ...}
-   # Сохрани ID ПВЗ для следующих запросов
-   
-   # Получить список ПВЗ:
-   curl -X GET http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN"
-   
-   # Создать приёмку (нужен токен сотрудника ПВЗ):
-   curl -X POST http://localhost:8080/receptions/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
-   # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd", ...}
-   
-   # Добавить товар (нужен токен сотрудника ПВЗ):
-   curl -X POST http://localhost:8080/products/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
-   # Ответ: {"id":"38d841a0-dd3f-4582-8123-e31849ac0c30", ...}
-   
-   # Закрыть приёмку (нужен токен сотрудника ПВЗ):
-   curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/close_last_reception -H "Authorization: Bearer $TOKEN"
-   # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd","status":"close", ...}
-   
-   # Удалить последний товар (нужен токен сотрудника ПВЗ):
-   curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/delete_last_product -H "Authorization: Bearer $TOKEN"
-   ```
+  ```sh
+  # Создать ПВЗ (нужен токен модератора):
+  curl -X POST http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"city":"Москва"}'
+  # Ответ: {"id":"42289a64-0f53-415a-8fe0-b8b800790e42", ...}
+  # Сохрани ID ПВЗ для следующих запросов
+  
+  # Получить список ПВЗ:
+  curl -X GET http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN"
+  
+  # Создать приёмку (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/receptions/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
+  # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd", ...}
+  
+  # Добавить товар (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/products/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
+  # Ответ: {"id":"38d841a0-dd3f-4582-8123-e31849ac0c30", ...}
+  
+  # Закрыть приёмку (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/close_last_reception -H "Authorization: Bearer $TOKEN"
+  # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd","status":"close", ...}
+  
+  # Удалить последний товар (нужен токен сотрудника ПВЗ):
+  curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/delete_last_product -H "Authorization: Bearer $TOKEN"
+  ```
 
 8. **Остановить сервис:**
-   ```sh
-   docker compose down
-   ```
+  ```sh
+  docker compose down
+  ```
 
 ## Порты
 
