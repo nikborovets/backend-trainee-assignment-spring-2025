@@ -125,7 +125,7 @@ package "Interfaces" #LightBlue {
         }
         class ProductDTO {
             + id: UUID
-            + receivedAt: DateTime
+            + dateTime: DateTime
             + type: ProductType
             + receptionId: UUID
         }
@@ -254,7 +254,7 @@ package "Entities" #LightYellow {
 
     class Product {
         + id: UUID
-        + receivedAt: DateTime
+        + dateTime: DateTime
         + type: ProductType
         + receptionId: UUID
     }

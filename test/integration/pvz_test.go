@@ -3,16 +3,29 @@ package integration_test
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/usecases"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	// Загружаем переменные окружения из .env файла
+	_ = godotenv.Load("../../.env")
+
+	// Вывод значения для отладки
+	dsn := os.Getenv("TEST_PG_DSN")
+	if dsn != "" {
+		println("TEST_PG_DSN loaded:", dsn)
+	}
+}
 
 func setupTestDB(t *testing.T) *sql.DB {
 	dsn := configs.GetTestPGDSN()
@@ -38,7 +51,7 @@ CREATE TABLE IF NOT EXISTS product (
     id UUID PRIMARY KEY,
     reception_id UUID NOT NULL REFERENCES reception(id),
     type TEXT NOT NULL,
-    received_at TIMESTAMPTZ NOT NULL
+    date_time TIMESTAMPTZ NOT NULL
 );
 DELETE FROM product;
 DELETE FROM reception;

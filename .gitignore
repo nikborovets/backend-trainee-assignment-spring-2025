@@ -46,6 +46,7 @@ debug
 .history/
 .cursor/*
 .trae/*
+.github/*
 
 # Кэш Go
 go.sum

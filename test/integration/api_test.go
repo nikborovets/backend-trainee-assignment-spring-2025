@@ -7,12 +7,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/configs"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/entities"
 	"github.com/nikborovets/backend-trainee-assignment-spring-2025/internal/infrastructure/repositories"
@@ -21,31 +23,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	// Загружаем переменные окружения из .env файла
+	_ = godotenv.Load("../../.env")
+
+	// Вывод значения для отладки
+	dsn := os.Getenv("TEST_PG_DSN")
+	if dsn != "" {
+		println("TEST_PG_DSN loaded:", dsn)
+	}
+}
+
 // Адаптеры для репозиториев
 type productRepoAdapter struct {
 	*repositories.PGProductRepository
 }
 
-func (r *productRepoAdapter) Delete(ctx context.Context, productID uuid.UUID) error {
-	product, err := r.PGProductRepository.DeleteLast(ctx, productID)
-	if err != nil {
-		return err
-	}
-	if product == nil {
-		return sql.ErrNoRows
-	}
-	return nil
+// DeleteLast только для интерфейса interfaces.ProductRepository
+func (r *productRepoAdapter) DeleteLast(ctx context.Context, receptionID uuid.UUID) error {
+	_, err := r.PGProductRepository.DeleteLast(ctx, receptionID)
+	return err
 }
 
-func (r *productRepoAdapter) DeleteLast(ctx context.Context, pvzID uuid.UUID) error {
-	product, err := r.PGProductRepository.DeleteLast(ctx, pvzID)
-	if err != nil {
-		return err
-	}
-	if product == nil {
-		return sql.ErrNoRows
-	}
-	return nil
+type productRepoForDelete struct {
+	*repositories.PGProductRepository
+}
+
+// DeleteLast для интерфейса usecases.ProductRepositoryForDelete
+func (r *productRepoForDelete) DeleteLast(ctx context.Context, receptionID uuid.UUID) (*entities.Product, error) {
+	return r.PGProductRepository.DeleteLast(ctx, receptionID)
 }
 
 type receptionRepoAdapter struct {
@@ -74,12 +80,13 @@ func setupTestServer(t *testing.T) (*gin.Engine, *sql.DB) {
 	pvzRepo := repositories.NewPGPVZRepository(db)
 	receptionRepo := &receptionRepoAdapter{repositories.NewPGReceptionRepository(db)}
 	productRepo := &productRepoAdapter{repositories.NewPGProductRepository(db)}
+	productRepoDelete := &productRepoForDelete{repositories.NewPGProductRepository(db)}
 
 	// Инициализация use cases
 	createPVZUC := usecases.NewCreatePVZUseCase(pvzRepo)
 	listPVZsUC := usecases.NewListPVZsUseCase(pvzRepo, receptionRepo, productRepo)
 	closeReceptionUC := usecases.NewCloseReceptionUseCase(receptionRepo)
-	deleteLastProductUC := usecases.NewDeleteLastProductUseCase(productRepo, receptionRepo)
+	deleteLastProductUC := usecases.NewDeleteLastProductUseCase(productRepoDelete, receptionRepo)
 	createReceptionUC := usecases.NewCreateReceptionUseCase(receptionRepo)
 	addProductUC := usecases.NewAddProductUseCase(productRepo, receptionRepo)
 	dummyLoginUC := usecases.NewDummyLoginUseCase(&configs.Config{JWTSecret: "test_secret"})
@@ -103,6 +110,7 @@ func setupTestServer(t *testing.T) (*gin.Engine, *sql.DB) {
 	auth.POST("/receptions", receptionCtrl.Create)
 	auth.POST("/products", productCtrl.Add)
 	auth.POST("/pvz/:pvzId/close_last_reception", pvzCtrl.CloseLastReception)
+	auth.POST("/pvz/:pvzId/delete_last_product", pvzCtrl.DeleteLastProduct) // Добавляем эндпоинт для удаления товара
 
 	return r, db
 }

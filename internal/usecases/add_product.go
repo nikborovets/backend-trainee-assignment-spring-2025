@@ -48,10 +48,10 @@ func (uc *AddProductUseCase) Execute(ctx context.Context, user entities.User, pv
 		return entities.Product{}, errors.New("нет открытой приёмки для добавления товара")
 	}
 	product := entities.Product{
-		ID:          uuid.New(),
+		ID:          entities.GenerateUUID(),
 		ReceptionID: rec.ID,
 		Type:        productType,
-		ReceivedAt:  time.Now().UTC(),
+		DateTime:    time.Now().UTC(),
 	}
 	return uc.productRepo.Save(ctx, product)
 }

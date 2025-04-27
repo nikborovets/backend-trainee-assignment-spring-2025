@@ -4,3 +4,5 @@ BEGIN
         CREATE DATABASE pvz_service;
     END IF;
 END $$; 
+-- Создаем тестовую базу данных
+CREATE DATABASE pvz_service_test;

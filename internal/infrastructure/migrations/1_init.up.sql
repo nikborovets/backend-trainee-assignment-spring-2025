@@ -34,5 +34,5 @@ CREATE TABLE IF NOT EXISTS product (
     id UUID PRIMARY KEY,
     reception_id UUID NOT NULL REFERENCES reception(id),
     type TEXT NOT NULL,
-    received_at TIMESTAMPTZ NOT NULL
-); 
+    date_time TIMESTAMPTZ NOT NULL
+);

@@ -13,35 +13,40 @@ import (
 )
 
 type mockProductRepoForDelete struct {
-	deleteFn func(ctx context.Context, productID uuid.UUID) error
+	deleteLastFn func(ctx context.Context, receptionID uuid.UUID) (*entities.Product, error)
 }
 
-func (m *mockProductRepoForDelete) Delete(ctx context.Context, productID uuid.UUID) error {
-	return m.deleteFn(ctx, productID)
+func (m *mockProductRepoForDelete) DeleteLast(ctx context.Context, receptionID uuid.UUID) (*entities.Product, error) {
+	return m.deleteLastFn(ctx, receptionID)
 }
 
 type mockReceptionRepoForDelete struct {
 	getActiveFn func(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
-	saveFn      func(ctx context.Context, reception entities.Reception) (entities.Reception, error)
 }
 
 func (m *mockReceptionRepoForDelete) GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error) {
 	return m.getActiveFn(ctx, pvzID)
 }
 
-func (m *mockReceptionRepoForDelete) Save(ctx context.Context, reception entities.Reception) (entities.Reception, error) {
-	return m.saveFn(ctx, reception)
-}
-
 func TestDeleteLastProductUseCase_Execute(t *testing.T) {
 	// Arrange
 	pvzID := uuid.New()
-	p1, p2 := uuid.New(), uuid.New()
-	rec := &entities.Reception{
-		ID:       pvzID,
+	receptionID := uuid.New()
+
+	activeReception := &entities.Reception{
+		ID:       receptionID,
+		PVZID:    pvzID,
 		Status:   entities.ReceptionInProgress,
-		Products: []uuid.UUID{p1, p2},
+		DateTime: time.Now(),
 	}
+
+	lastProduct := &entities.Product{
+		ID:          uuid.New(),
+		ReceptionID: receptionID,
+		Type:        entities.ProductElectronics,
+		DateTime:    time.Now(),
+	}
+
 	user := entities.User{
 		Role:             entities.UserRolePVZStaff,
 		Email:            "staff@avito.ru",
@@ -49,21 +54,23 @@ func TestDeleteLastProductUseCase_Execute(t *testing.T) {
 	}
 
 	productRepo := &mockProductRepoForDelete{
-		deleteFn: func(ctx context.Context, productID uuid.UUID) error {
-			if productID == p2 {
-				return nil
+		deleteLastFn: func(ctx context.Context, recID uuid.UUID) (*entities.Product, error) {
+			if recID == receptionID {
+				return lastProduct, nil
 			}
-			return assert.AnError
+			return nil, assert.AnError
 		},
 	}
+
 	receptionRepo := &mockReceptionRepoForDelete{
 		getActiveFn: func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
-			return rec, nil
-		},
-		saveFn: func(ctx context.Context, r entities.Reception) (entities.Reception, error) {
-			return *rec, nil
+			if id == pvzID {
+				return activeReception, nil
+			}
+			return nil, nil
 		},
 	}
+
 	uc := usecases.NewDeleteLastProductUseCase(productRepo, receptionRepo)
 	ctx := context.Background()
 
@@ -72,29 +79,67 @@ func TestDeleteLastProductUseCase_Execute(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	require.Len(t, rec.Products, 1)
-	require.Equal(t, p1, rec.Products[0], "LIFO remove failed: wrong product left")
 
-	// Не pvz_staff
+	// Проверка, что метод GetActive вызывается корректно
+	receptionRepo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
+		assert.Equal(t, pvzID, id)
+		return activeReception, nil
+	}
+
+	// Проверка, что метод DeleteLast вызывается с правильным reception_id
+	productRepo.deleteLastFn = func(ctx context.Context, recID uuid.UUID) (*entities.Product, error) {
+		assert.Equal(t, receptionID, recID)
+		return lastProduct, nil
+	}
+
+	err = uc.Execute(ctx, user, pvzID)
+	require.NoError(t, err)
+
+	// Тест: Не pvz_staff
 	user.Role = entities.UserRoleClient
 	err = uc.Execute(ctx, user, pvzID)
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "только сотрудник ПВЗ может удалять товары")
 
-	// Нет открытой приёмки
+	// Тест: Нет открытой приёмки
+	user.Role = entities.UserRolePVZStaff
 	receptionRepo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
 		return nil, nil
 	}
-	user.Role = entities.UserRolePVZStaff
 	err = uc.Execute(ctx, user, pvzID)
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "нет открытой приёмки")
 
-	// Ошибка удаления
-	receptionRepo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
-		return rec, nil
+	// Тест: Закрытая приемка
+	closedReception := &entities.Reception{
+		ID:       receptionID,
+		PVZID:    pvzID,
+		Status:   entities.ReceptionClosed,
+		DateTime: time.Now(),
 	}
-	productRepo.deleteFn = func(ctx context.Context, productID uuid.UUID) error {
-		return assert.AnError
+	receptionRepo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
+		return closedReception, nil
 	}
 	err = uc.Execute(ctx, user, pvzID)
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "нет открытой приёмки")
+
+	// Тест: Ошибка при удалении последнего товара
+	receptionRepo.getActiveFn = func(ctx context.Context, id uuid.UUID) (*entities.Reception, error) {
+		return activeReception, nil
+	}
+	productRepo.deleteLastFn = func(ctx context.Context, recID uuid.UUID) (*entities.Product, error) {
+		return nil, assert.AnError
+	}
+	err = uc.Execute(ctx, user, pvzID)
+	assert.Error(t, err)
+	assert.Equal(t, assert.AnError, err)
+
+	// Тест: Нет товаров для удаления
+	productRepo.deleteLastFn = func(ctx context.Context, recID uuid.UUID) (*entities.Product, error) {
+		return nil, nil
+	}
+	err = uc.Execute(ctx, user, pvzID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "нет товаров для удаления")
 }

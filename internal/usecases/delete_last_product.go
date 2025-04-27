@@ -10,12 +10,11 @@ import (
 
 // ProductRepositoryForDelete — интерфейс для удаления товара (LIFO)
 type ProductRepositoryForDelete interface {
-	Delete(ctx context.Context, productID uuid.UUID) error
+	DeleteLast(ctx context.Context, receptionID uuid.UUID) (*entities.Product, error)
 }
 
 type ReceptionRepositoryForDelete interface {
 	GetActive(ctx context.Context, pvzID uuid.UUID) (*entities.Reception, error)
-	Save(ctx context.Context, reception entities.Reception) (entities.Reception, error)
 }
 
 // DeleteLastProductUseCase — интерактор для удаления последнего товара из приёмки (LIFO)
@@ -33,6 +32,7 @@ func (uc *DeleteLastProductUseCase) Execute(ctx context.Context, user entities.U
 	if user.Role != entities.UserRolePVZStaff {
 		return errors.New("только сотрудник ПВЗ может удалять товары")
 	}
+
 	rec, err := uc.receptionRepo.GetActive(ctx, pvzID)
 	if err != nil {
 		return err
@@ -40,15 +40,18 @@ func (uc *DeleteLastProductUseCase) Execute(ctx context.Context, user entities.U
 	if rec == nil || !rec.IsOpen() {
 		return errors.New("нет открытой приёмки для удаления товара")
 	}
-	lastID, err := rec.RemoveLastProduct()
+
+	// Удаляем последний товар через репозиторий
+	product, err := uc.productRepo.DeleteLast(ctx, rec.ID)
 	if err != nil {
 		return err
 	}
-	if err := uc.productRepo.Delete(ctx, lastID); err != nil {
-		return err
+
+	if product == nil {
+		return errors.New("нет товаров для удаления")
 	}
-	_, err = uc.receptionRepo.Save(ctx, *rec)
-	return err
+
+	return nil
 }
 
 // DeleteLastProductUseCaseIface — интерфейс для моков и контроллеров
