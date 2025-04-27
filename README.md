@@ -55,26 +55,26 @@
   ```sh
   # Создать ПВЗ (нужен токен модератора):
   curl -X POST http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"city":"Москва"}'
-  # Ответ: {"id":"42289a64-0f53-415a-8fe0-b8b800790e42", ...}
+  # Ответ: {"id":"<PVZ_ID>", ...}
   # Сохрани ID ПВЗ для следующих запросов
   
   # Получить список ПВЗ:
   curl -X GET http://localhost:8080/pvz/ -H "Authorization: Bearer $TOKEN"
   
   # Создать приёмку (нужен токен сотрудника ПВЗ):
-  curl -X POST http://localhost:8080/receptions/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
-  # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd", ...}
+  curl -X POST http://localhost:8080/receptions/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"pvzId":"<PVZ_ID>"}'
+  # Ответ: {"id":"<RECEPTION_ID>", ...}
   
   # Добавить товар (нужен токен сотрудника ПВЗ):
-  curl -X POST http://localhost:8080/products/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"42289a64-0f53-415a-8fe0-b8b800790e42"}'
-  # Ответ: {"id":"38d841a0-dd3f-4582-8123-e31849ac0c30", ...}
+  curl -X POST http://localhost:8080/products/ -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"type":"электроника","pvzId":"<PVZ_ID>"}'
+  # Ответ: {"id":"<PRODUCT_ID>", ...}
   
   # Закрыть приёмку (нужен токен сотрудника ПВЗ):
-  curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/close_last_reception -H "Authorization: Bearer $TOKEN"
-  # Ответ: {"id":"1d4bf377-8098-4007-b8d0-813968321cbd","status":"close", ...}
+  curl -X POST http://localhost:8080/pvz/<PVZ_ID>/close_last_reception -H "Authorization: Bearer $TOKEN"
+  # Ответ: {"id":"<RECEPTION_ID>","status":"close", ...}
   
   # Удалить последний товар (нужен токен сотрудника ПВЗ):
-  curl -X POST http://localhost:8080/pvz/42289a64-0f53-415a-8fe0-b8b800790e42/delete_last_product -H "Authorization: Bearer $TOKEN"
+  curl -X POST http://localhost:8080/pvz/<PVZ_ID>/delete_last_product -H "Authorization: Bearer $TOKEN"
   ```
 
 8. **Остановить сервис:**
