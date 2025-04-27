@@ -20,13 +20,9 @@
   cd backend-trainee-assignment-spring-2025
   ```
 
-2. **Создай файл `.env` со следующими переменными:**
-  ```env
-  PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service?sslmode=disable
-  TEST_PG_DSN=postgres://postgres:postgres@localhost:5432/pvz_service_test?sslmode=disable
-  JWT_SECRET=test_secret
-  PORT=8080
-  GRPC_PORT=3000
+2. **Создай файл `.env` (пример конфигурации: `.env.example`).**
+  ```sh
+  make setup-env
   ```
 
 3. **Запусти всё через Docker:**
@@ -91,6 +87,22 @@
 - **HTTP API**: 8080
 - **gRPC**: 3000
 - **Prometheus**: 9000
+
+## 🚀 Запуск приложения
+
+```sh
+make docker-build    # Собрать образы
+make docker-up       # Запустить базу, миграции и приложение
+make docker-logs     # Смотреть логи приложения
+make docker-down     # Остановить и удалить контейнеры
+```
+
+## 🧪 Запуск тестов
+
+```sh
+make docker-build-test   # Собрать образ для тестов (нужно один раз или после изменений)
+make docker-test         # Запустить тесты в Docker
+```
 
 ## Запуск тестов и покрытие
 

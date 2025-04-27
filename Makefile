@@ -27,6 +27,9 @@ coverage:
 docker-build:
 	docker compose build
 
+docker-build-test:
+	docker compose --profile test build test
+
 docker-up:
 	docker compose up -d
 
@@ -39,11 +42,14 @@ docker-down-v:
 docker-logs:
 	docker compose logs -f
 
+docker-logs-test:
+	docker compose --profile test logs -f test
+
 docker-ps:
 	docker compose ps
 
 docker-test:
-	docker compose run --rm test
+	docker compose --profile test run --rm test
 
 # ----------------- DEVELOPMENT -----------------
 
@@ -83,10 +89,12 @@ help:
 	@echo "  coverage          - Generate test coverage report"
 	@echo ""
 	@echo "  docker-build      - Build Docker images"
+	@echo "  docker-build-test - Build test Docker container"
 	@echo "  docker-up         - Start Docker containers"
 	@echo "  docker-down       - Stop Docker containers"
 	@echo "  docker-down-v     - Stop Docker containers and remove volumes"
 	@echo "  docker-logs       - Show Docker container logs"
+	@echo "  docker-logs-test  - Show logs of the test container"
 	@echo "  docker-ps         - Show running Docker containers"
 	@echo "  docker-test       - Run tests in Docker container"
 	@echo ""

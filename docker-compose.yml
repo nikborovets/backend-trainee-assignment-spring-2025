@@ -50,12 +50,12 @@ services:
       context: .
       target: tester
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
     environment:
       TEST_PG_DSN: ${TEST_PG_DSN_DOCKER}
-    volumes:
-      - .:/app
+    profiles:
+      - test
 
 volumes:
   pgdata:
