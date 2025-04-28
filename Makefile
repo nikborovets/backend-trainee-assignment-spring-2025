@@ -19,7 +19,8 @@ lint:
 	golangci-lint run
 
 coverage:
-	go test -coverprofile=cover.out ./test/...
+	go test -coverpkg=./internal/... -coverprofile=cover.out ./test/...
+	go tool cover -func=cover.out -html=cover.out
 	go tool cover -html=cover.out
 
 # ----------------- DOCKER -----------------
