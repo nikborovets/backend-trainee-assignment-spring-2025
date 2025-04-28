@@ -23,6 +23,5 @@ FROM gcr.io/distroless/base-debian12
 WORKDIR /app
 COPY --from=builder /app/app /app/app
 COPY .env /app/.env
-ENV GIN_MODE=release
-EXPOSE 8080
+EXPOSE 8080 3000 9000
 CMD ["/app/app"]
